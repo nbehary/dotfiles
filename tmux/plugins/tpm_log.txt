@@ -1,0 +1,72 @@
+[2024-05-30 18:10:47.268]	 List of discovered tpm plugins: catppuccin/tmux
+[2024-05-30 18:10:47.276]	 Invoking /home/nate/.config/tmux/plugins/tpm/bin/install_plugins
+[2024-05-30 18:10:47.294]	 Installing "tmux"
+[2024-05-30 18:10:47.884]	   "tmux" download success
+[2024-05-30 18:10:47.893]	 Done.
+
+[2024-05-30 18:11:43.208]	 List of discovered tpm plugins: catppuccin/tmux
+[2024-05-30 18:11:43.216]	 Invoking /home/nate/.config/tmux/plugins/tpm/bin/install_plugins
+[2024-05-30 18:11:43.236]	 Already installed "tmux"
+[2024-05-30 18:11:43.244]	 Invoking /home/nate/.config/tmux/plugins/tpm/bin/update_plugins all
+[2024-05-30 18:11:43.253]	 Updating all plugins!
+[2024-05-30 18:11:43.253]	 
+[2024-05-30 18:11:43.559]	   "tmux" update success
+[2024-05-30 18:11:43.560]	     | Already up to date.
+[2024-05-30 18:11:43.568]	 Invoking /home/nate/.config/tmux/plugins/tpm/bin/clean_plugins all
+[2024-05-30 18:11:43.593]	 Done.
+
+[2024-05-30 18:12:18.387]	 List of discovered tpm plugins: catppuccin/tmux
+[2024-05-30 18:12:18.395]	 Invoking /home/nate/.config/tmux/plugins/tpm/bin/install_plugins
+[2024-05-30 18:12:18.413]	 Already installed "tmux"
+[2024-05-30 18:12:18.421]	 Invoking /home/nate/.config/tmux/plugins/tpm/bin/update_plugins all
+[2024-05-30 18:12:18.430]	 Updating all plugins!
+[2024-05-30 18:12:18.430]	 
+[2024-05-30 18:12:18.738]	   "tmux" update success
+[2024-05-30 18:12:18.739]	     | Already up to date.
+[2024-05-30 18:12:18.747]	 Invoking /home/nate/.config/tmux/plugins/tpm/bin/clean_plugins all
+[2024-05-30 18:12:18.772]	 Done.
+
+[2024-05-30 18:13:31.191]	 List of discovered tpm plugins: dracula/tmux
+[2024-05-30 18:13:31.199]	 Invoking /home/nate/.config/tmux/plugins/tpm/bin/install_plugins
+[2024-05-30 18:13:31.218]	 Already installed "tmux"
+[2024-05-30 18:13:31.226]	 Invoking /home/nate/.config/tmux/plugins/tpm/bin/update_plugins all
+[2024-05-30 18:13:31.235]	 Updating all plugins!
+[2024-05-30 18:13:31.235]	 
+[2024-05-30 18:13:31.537]	   "tmux" update success
+[2024-05-30 18:13:31.538]	     | Already up to date.
+[2024-05-30 18:13:31.546]	 Invoking /home/nate/.config/tmux/plugins/tpm/bin/clean_plugins all
+[2024-05-30 18:13:31.571]	 Done.
+
+[2024-05-31 10:14:03.943]	 List of discovered tpm plugins: dracula/tmux
+[2024-05-31 10:14:03.951]	 Invoking /home/nate/.config/tmux/plugins/tpm/bin/install_plugins
+[2024-05-31 10:14:03.972]	 Already installed "tmux"
+[2024-05-31 10:14:03.980]	 Invoking /home/nate/.config/tmux/plugins/tpm/bin/update_plugins all
+[2024-05-31 10:14:03.990]	 Updating all plugins!
+[2024-05-31 10:14:03.990]	 
+[2024-05-31 10:14:04.334]	   "tmux" update success
+[2024-05-31 10:14:04.336]	     | Already up to date.
+[2024-05-31 10:14:04.344]	 Invoking /home/nate/.config/tmux/plugins/tpm/bin/clean_plugins all
+[2024-05-31 10:14:04.371]	 Done.
+
+[2024-06-03 15:48:44.842]	 List of discovered tpm plugins: dracula/tmux
+[2024-06-03 15:48:44.850]	 Invoking /home/nate/.config/tmux/plugins/tpm/bin/install_plugins
+[2024-06-03 15:48:44.870]	 Already installed "tmux"
+[2024-06-03 15:48:44.879]	 Invoking /home/nate/.config/tmux/plugins/tpm/bin/update_plugins all
+[2024-06-03 15:48:44.887]	 Updating all plugins!
+[2024-06-03 15:48:44.887]	 
+[2024-06-03 15:48:45.241]	   "tmux" update success
+[2024-06-03 15:48:45.242]	     | Already up to date.
+[2024-06-03 15:48:45.250]	 Invoking /home/nate/.config/tmux/plugins/tpm/bin/clean_plugins all
+[2024-06-03 15:48:45.275]	 Done.
+
+[2024-06-05 09:37:18.483]	 List of discovered tpm plugins: dracula/tmux
+[2024-06-05 09:37:18.491]	 Invoking /home/nate/.config/tmux/plugins/tpm/bin/install_plugins
+[2024-06-05 09:37:18.512]	 Already installed "tmux"
+[2024-06-05 09:37:18.520]	 Invoking /home/nate/.config/tmux/plugins/tpm/bin/update_plugins all
+[2024-06-05 09:37:18.529]	 Updating all plugins!
+[2024-06-05 09:37:18.529]	 
+[2024-06-05 09:37:18.882]	   "tmux" update success
+[2024-06-05 09:37:18.883]	     | Already up to date.
+[2024-06-05 09:37:18.892]	 Invoking /home/nate/.config/tmux/plugins/tpm/bin/clean_plugins all
+[2024-06-05 09:37:18.916]	 Done.
+

@@ -1,0 +1,61 @@
+configuration {
+	show-icons: false;
+}
+
+@theme "theme"
+
+window {
+	width: 550px;
+	height: 150px;
+	border-radius: 0;
+	border: 2;
+	padding: 0;
+	border-color: @border;
+	background-color: @background;
+}
+
+mainbox {
+	children: [listview];
+	padding: 10;
+	background-color: @background;
+}
+
+listview {
+	enabled: true;
+	columns: 4;
+	lines: 1;
+	cycle: true;
+	dynamic: true;
+	scrollbar: false;
+	layout: vertical;
+	reverse: false;
+    
+	spacing: 10;
+	margin: 0;
+	padding: 0;
+	border: 0;
+	border-radius: 0;
+	background-color:  @background;
+}
+
+
+element {
+	background-color: @background-alt;
+	text-color: @foreground;
+	padding: 26 0;
+	border-radius: 0;
+}
+
+element-text {
+	font: "icomoon-feather 40";
+	background-color: inherit;
+	text-color: inherit;
+	expand: true;
+	horizontal-align: 0.5;
+	vertical-align: 0.6;
+}
+
+element.selected.normal {
+	background-color: @accent;
+	text-color: @background;
+}

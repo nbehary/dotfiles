@@ -1,0 +1,128 @@
+# reload sxhkd configuration file
+super + shift + x
+	pkill -USR1 -x sxhkd 
+
+alt + { d, f, t}
+	{ discord, thunar, transmission-gtk}
+
+# bluetooth monitor
+super + shift + ctrl+ b
+	blueman-manager
+
+# rofi launcher
+super + p
+	rofi -show combi
+
+# rofi power menu
+super + q
+	~/.local/bin/powermenu.sh
+
+# terminal
+super + Return
+	alacritty
+
+# browser and private browser
+super + ctrl + b
+	google-chrome-stable
+
+# file manager
+super + ctrl + f
+	thunar
+
+# editor
+super + ctrl + e
+	lite-xl
+
+# music player
+super + ctrl + m
+	deadbeef
+
+# screenshot
+Print
+	xfce4-screenshooter
+
+# increase volume 
+XF86AudioRaiseVolume
+	pactl set-sink-volume 0 +5%
+
+# decrease volume	
+XF86AudioLowerVolume
+	pactl set-sink-volume 0 -5%
+
+# mute key
+XF86AudioMute
+	pactl set-sink-mute 0 toggle
+
+# music control keys
+{XF86AudioPlay,XF86AudioNext,XF86AudioPrev}
+	playerctl {play-pause,next,previous}
+
+# backlight keys
+{XF86MonBrightnessUp,XF86MonBrightnessDown}
+	brightnessctl s 10{+,-}
+
+# toggle polybar
+super + shift + b
+	~/.local/bin/toggle-polybar.sh
+
+# quit dk
+super + shift + q
+	dkcmd exit
+
+# reload dkrc
+super + shift + r
+	dkcmd reload
+
+# restart dk
+super + ctrl + shift + r
+	dkcmd restart
+
+# focus next or previous window
+super + {j,k}
+	dkcmd win focus {next,prev}
+
+# focus next or previous window
+super + {Up,Down}
+	dkcmd win focus {next,prev}
+
+# close window, cycle tiled windows in place
+super + x
+	dkcmd win kill
+
+# toggle fullscreen
+super + shift + f
+	dkcmd win full
+
+# toggle floating
+super + f
+	dkcmd win float
+
+# move window, signed (+/-) for relative changes
+super + shift + {h,j,k,l}
+	dkcmd win resize {x=-20,y=+20,y=-20,x=+20}
+# move window, signed (+/-) for relative changes
+super + shift + {Left,Up,Down,Right}
+	dkcmd win resize {x=-20,y=+20,y=-20,x=+20}
+
+# resize window, signed (+/-) for relative changes
+super + ctrl + {h,j,k,l}
+	dkcmd win resize {w=-20,h=+20,h=-20,w=+20}
+# resize window, signed (+/-) for relative changes
+super + ctrl + {Left,Up,Down,Right}
+	dkcmd win resize {w=-20,h=+20,h=-20,w=+20}
+
+# view, send, or follow to a workspace (by number)
+super + {_,shift + ,ctrl + }{1-9,0}
+	dkcmd ws {view,send,follow} {1-9,10}
+
+# view a workspace (by string)
+ctrl + {Up,Down}
+	dkcmd ws view {prev,next}
+
+# change border widths
+super + ctrl + {_,shift + }{equal,minus}
+	dkcmd set border {width,outer_width} {+1,-1}
+
+# change gap width
+super + {equal,minus}
+	dkcmd set gap {+5,-5}
