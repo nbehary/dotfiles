@@ -72,3 +72,4 @@ alias ls='ls --color'
 eval "$(fzf --zsh)"
 eval "$(zoxide init --cmd cd zsh)"
 
+export PATH=/home/nate/src/Odin/:/home/nate/.local/roc/:$PATH
