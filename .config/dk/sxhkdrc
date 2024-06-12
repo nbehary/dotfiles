@@ -116,7 +116,7 @@ super + {_,shift + ,ctrl + }{1-9,0}
 	dkcmd ws {view,send,follow} {1-9,10}
 
 # view a workspace (by string)
-ctrl + {Up,Down}
+ctrl + {Left,Right}
 	dkcmd ws view {prev,next}
 
 # change border widths

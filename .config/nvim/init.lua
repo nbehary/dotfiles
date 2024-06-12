@@ -247,14 +247,21 @@ vim.opt.rtp:prepend(lazypath)
 require('lazy').setup {
   -- NOTE: Plugins can be added with a link (or for a github repo: 'owner/repo' link).
   'tpope/vim-sleuth', -- Detect tabstop and shiftwidth automatically
-  'tpope/vim-fugitive',
   'Tetralux/odin.vim',
   {
     "folke/edgy.nvim",
     event = "VeryLazy",
     opts = {}
   },
-  'sindrets/diffview.nvim',
+  {
+    "NeogitOrg/neogit",
+    dependencies = {
+      "sindrets/diffview.nvim",
+      "nvim-telescope/telescope.nvim"
+    },
+    config = true
+  },
+
 
   -- NOTE: Plugins can also be added by using a table,
   -- with the first argument being the link and the following
@@ -277,8 +284,12 @@ require('lazy').setup {
   -- See `:help gitsigns` to understand what the configuration keys do
   { -- Adds git related signs to the gutter, as well as utilities for managing changes
     'lewis6991/gitsigns.nvim',
+      config = function()
+        require("gitsigns").setup()
+        vim.keymap.set("n", "<leader>gp", ":Gitsigns preview_hunk <CR>")
+        vim.keymap.set("n", "<leader>gb", ":Gitsigns toggle_current_line_blame <CR>")
+      end,
     opts = {
-
       signs = {
         add = { text = '+' },
         change = { text = '~' },
@@ -312,6 +323,19 @@ require('lazy').setup {
     end
 
   },
+  {
+    "vhyrro/luarocks.nvim",
+    priority = 1000,
+    config = true,
+  },
+  {
+    "nvim-neorg/neorg",
+    dependencies = { "luarocks.nvim" },
+    lazy = false, -- Disable lazy loading as some `lazy.nvim` distributions set `lazy = true` by default
+    version = "*", -- Pin Neorg to the latest stable release
+    config = true,
+  },
+
 
   { -- Useful plugin to show you pending keybinds.
     'folke/which-key.nvim',
