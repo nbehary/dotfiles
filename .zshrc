@@ -67,9 +67,13 @@ zstyle ':fzf-tab:complete:cd:*' fzf-preview 'ls --color $realpath'
 
 # Aliases
 alias ls='ls --color'
+alias inv='nvim $(fzf -m --preview="bat --color=always {}")'
+
+export PATH=$PATH:~/homebrew/bin:~/src/Odin:~/.local/bin
 
 # Shell initegrations
 eval "$(fzf --zsh)"
 eval "$(zoxide init --cmd cd zsh)"
 
-export PATH=/home/nate/src/Odin/:/home/nate/.local/roc/:$PATH
+. "$HOME/.cargo/env"
+
