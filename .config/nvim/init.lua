@@ -249,19 +249,18 @@ require('lazy').setup {
   'tpope/vim-sleuth', -- Detect tabstop and shiftwidth automatically
   'Tetralux/odin.vim',
   {
-    "folke/edgy.nvim",
-    event = "VeryLazy",
-    opts = {}
+    'folke/edgy.nvim',
+    event = 'VeryLazy',
+    opts = {},
   },
   {
-    "NeogitOrg/neogit",
+    'NeogitOrg/neogit',
     dependencies = {
-      "sindrets/diffview.nvim",
-      "nvim-telescope/telescope.nvim"
+      'sindrets/diffview.nvim',
+      'nvim-telescope/telescope.nvim',
     },
-    config = true
+    config = true,
   },
-
 
   -- NOTE: Plugins can also be added by using a table,
   -- with the first argument being the link and the following
@@ -284,11 +283,11 @@ require('lazy').setup {
   -- See `:help gitsigns` to understand what the configuration keys do
   { -- Adds git related signs to the gutter, as well as utilities for managing changes
     'lewis6991/gitsigns.nvim',
-      config = function()
-        require("gitsigns").setup()
-        vim.keymap.set("n", "<leader>gp", ":Gitsigns preview_hunk <CR>")
-        vim.keymap.set("n", "<leader>gb", ":Gitsigns toggle_current_line_blame <CR>")
-      end,
+    config = function()
+      require('gitsigns').setup()
+      vim.keymap.set('n', '<leader>gp', ':Gitsigns preview_hunk <CR>')
+      vim.keymap.set('n', '<leader>gb', ':Gitsigns toggle_current_line_blame <CR>')
+    end,
     opts = {
       signs = {
         add = { text = '+' },
@@ -297,6 +296,22 @@ require('lazy').setup {
         topdelete = { text = '‾' },
         changedelete = { text = '~' },
       },
+    },
+  },
+  {
+    'kdheepak/lazygit.nvim',
+    cmd = {
+      'LazyGit',
+      'LazyGitConfig',
+      'LazyGitCurrentFile',
+      'LazyGitFilter',
+      'LazyGitFilterCurrentFile',
+    },
+    dependencies = {
+      'nvim-lua/plenary.nvim',
+    },
+    keys = {
+      { "<leader>lg", "<cmd>LazyGit<cr>", desc = "Open Lazy Git" },
     },
   },
 
@@ -315,13 +330,12 @@ require('lazy').setup {
   -- after the plugin has been loaded:
   --  config = function() ... end
   {
-    "ggandor/leap.nvim",
+    'ggandor/leap.nvim',
     config = function()
-      local leap = require('leap')
+      local leap = require 'leap'
       leap.add_default_mappings()
       leap.opts.case_sensitive = true
-    end
-
+    end,
   },
 
   { -- Useful plugin to show you pending keybinds.
@@ -501,7 +515,7 @@ require('lazy').setup {
       vim.keymap.set('n', '<space>-', require('oil').toggle_float)
     end,
   },
-  {'mfussenegger/nvim-jdtls'},
+  { 'mfussenegger/nvim-jdtls' },
   {
     'stevearc/conform.nvim',
     event = { 'BufReadPre', 'BufNewFile' },
@@ -845,7 +859,7 @@ require('lazy').setup {
       }
     end,
   },
-  {'catppuccin/nvim', name= "catppuccin", priority = 1000 },
+  { 'catppuccin/nvim', name = 'catppuccin', priority = 1000 },
 
   { -- You can easily change to a different colorscheme.
     -- Change the name of the colorscheme plugin below, and then
