@@ -32,9 +32,9 @@ colors:
     
 font:
   normal:
-    family: JetBrainsMono Nerd Font
+    family: ProggyClean Nerd Font Mono
   bold:
-    family: JetBrainsMono Nerd Font
+    family: ProggyClean Nerd Font Mono
   size: 8
 
 window:

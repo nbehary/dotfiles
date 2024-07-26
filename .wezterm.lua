@@ -3,9 +3,9 @@ local wezterm = require("wezterm")
 -- This will hold the configuration
 local config = wezterm.config_builder()
 
-config.font = wezterm.font("JetBrainsMono Nerd Font")
+config.font = wezterm.font("ProggyClean Nerd Font Mono")
 
-config.font_size = 13
+config.font_size = 25
 
 config.enable_tab_bar = false
 
@@ -22,6 +22,6 @@ config.colors = {
 	brights = { "#214969", "#E52E2E", "#44FFB1", "#FFE073", "#A277FF", "#a277ff", "#24EAF7", "#24EAF7" },
 }
 
-config.window_background_opacity = 0.9
+config.window_background_opacity = 0.75
 
 return config
