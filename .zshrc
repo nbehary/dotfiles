@@ -50,13 +50,20 @@ bindkey -v
 HISTSIZE=5000
 HISTFILE=~/.zsh_history
 SAVEHIST=$HISTSIZE
-HISTDUP=erase
-setopt appendhistory
-setopt sharehistory
-setopt hist_ignore_space
-setopt hist_save_no_dups
+setopt share_history
+setopt hist_expire_dups_first
 setopt hist_ignore_dups
-setopt hist_find_no_dups
+setopt hist_verify
+
+# completion using arrow keys (based on history)
+bindkey '^[[A' history-search-backward
+bindkey '^[[B' history-search-forward
+
+#setopt sharehistory
+#setopt hist_ignore_space
+#setopt hist_save_no_dups
+#setopt hist_ignore_dups
+#setopt hist_find_no_dups
 
 # Completion styling
 zstyle ':completion:*' matcher-list 'm:{a-z}={A-Za-z}'
@@ -75,5 +82,5 @@ export PATH=$PATH:~/homebrew/bin:~/src/Odin:~/.local/bin
 eval "$(fzf --zsh)"
 eval "$(zoxide init --cmd cd zsh)"
 
-. "$HOME/.cargo/env"
-
+export PATH=/home/nate/src/Odin/:/home/nate/.local/roc/:$PATH
+export PATH=$HOME/.local/bin:$PATH
