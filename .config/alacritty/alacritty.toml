@@ -1,8 +1,8 @@
 
-import = ["~/.config/alacritty/catppuccin/catppuccin-mocha.toml"]
+general.import = ["~/.config/alacritty/catppuccin/catppuccin-mocha.toml"]
 
 
-live_config_reload = true
+general.live_config_reload = true
 
 
 [env]
@@ -13,7 +13,7 @@ dynamic_padding = true
 opacity = 0.85
 
 [font]
-size = 26.0
+size = 16.0
 
 [font.bold]
 family = "ProggyCleanSZ Nerd Font Mono"
