@@ -19,7 +19,8 @@ super + q
 
 # terminal
 super + Return
-	alacritty
+	wezterm
+	#alacritty
 
 # browser and private browser
 super + ctrl + b
@@ -27,7 +28,7 @@ super + ctrl + b
 
 # file manager
 super + ctrl + f
-	thunar
+	natlilus
 
 # editor
 super + ctrl + e

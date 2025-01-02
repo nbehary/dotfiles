@@ -39,6 +39,7 @@ autoload -Uz compinit && compinit
 
 zinit cdreplay -q
 
+#[[ ! -s ~/.config/mpd/pid ]] && mpd
 
 # To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
@@ -73,14 +74,66 @@ zstyle ':fzf-tab:complete:cd:*' fzf-preview 'ls --color $realpath'
 #zstyle ':fzf-tab:complete:__zoxide_z:*' fzf-preview 'ls --color $realpath'
 
 # Aliases
-alias ls='ls --color'
+alias ls='eza --no-filesize --icons --grid --color=always --no-user'
 alias inv='nvim $(fzf -m --preview="bat --color=always {}")'
+alias hg='kitten hyperlinked-grep'
+alias icat='kitten icat'
+
+# other Aliases shortcuts
+alias c="clear"
+alias e="exit"
+
+# Tmux 
+alias a="attach"
+# calls the tmux new session script
+alias tns="~/scripts/tmux-sessionizer"
+
+# fzf 
+alias f="fzf"
+# called from ~/scripts/
+alias nlof="~/scripts/fzf_listoldfiles.sh"
+# opens documentation through fzf (eg: git,zsh etc.)
+alias fman="compgen -c | fzf | xargs man"
+
+# zoxide (called from ~/scripts/)
+alias nzo="~/scripts/zoxide_openfiles_nvim.sh"
 
 export PATH=$PATH:~/homebrew/bin:~/src/Odin:~/.local/bin
 
 # Shell initegrations
 eval "$(fzf --zsh)"
+
+export FZF_DEFAULT_COMMAND="fd --hidden --strip-cwd-prefix --exclude .git "
+export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
+export FZF_ALT_C_COMMAND="fd --type=d --hidden --strip-cwd-prefix --exclude .git"
+
+export FZF_DEFAULT_OPTS="--height 50% --layout=default --border --color=hl:#2dd4bf"
+
+# Setup fzf previews
+export FZF_CTRL_T_OPTS="--preview 'bat --color=always -n --line-range :500 {}'"
+export FZF_ALT_C_OPTS="--preview 'eza --icons=always --tree --color=always {} | head -200'"
+
+# fzf preview for tmux
+export FZF_TMUX_OPTS=" -p90%,70% "  
+
+# FZF with Git right in the shell by Junegunn : check out his github below
+# Keymaps for this is available at https://github.com/junegunn/fzf-git.sh
+source ~/scripts/fzf-git.sh
+
 eval "$(zoxide init --cmd cd zsh)"
 
 export PATH=/home/nate/src/Odin/:/home/nate/.local/roc/:$PATH
 export PATH=$HOME/.local/bin:$PATH
+
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
+[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
+
+# bun completions
+[ -s "/home/nate/.bun/_bun" ] && source "/home/nate/.bun/_bun"
+
+# bun
+export BUN_INSTALL="$HOME/.bun"
+export PATH="$BUN_INSTALL/bin:$PATH"
+source /usr/share/zsh/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
+source /usr/share/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh

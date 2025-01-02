@@ -167,8 +167,8 @@ vim.keymap.set('n', ']d', vim.diagnostic.goto_next, { desc = 'Go to next [D]iagn
 vim.keymap.set('n', '<leader>e', vim.diagnostic.open_float, { desc = 'Show diagnostic [E]rror messages' })
 vim.keymap.set('n', '<leader>q', vim.diagnostic.setloclist, { desc = 'Open diagnostic [Q]uickfix list' })
 
-vim.keymap.set('n', '<leader>t', '<cmd>terminal<CR>')
-
+-- vim.keymap.set('n', '<leader>t', '<cmd>terminal<CR>')
+--
 -- Exit terminal mode in the builtin terminal with a shortcut that is a bit easier
 -- for people to discover. Otherwise, you normally need to press <C-\><C-n>, which
 -- is not what someone will guess without a bit more experience.
@@ -311,7 +311,7 @@ require('lazy').setup {
       'nvim-lua/plenary.nvim',
     },
     keys = {
-      { "<leader>lg", "<cmd>LazyGit<cr>", desc = "Open Lazy Git" },
+      { '<leader>lg', '<cmd>LazyGit<cr>', desc = 'Open Lazy Git' },
     },
   },
 
@@ -338,27 +338,14 @@ require('lazy').setup {
     end,
   },
 
-  { -- Useful plugin to show you pending keybinds.
-    'folke/which-key.nvim',
-    event = 'VimEnter', -- Sets the loading event to 'VimEnter'
-    config = function() -- This is the function that runs, AFTER loading
-      require('which-key').setup()
-
-      -- Document existing key chains
-      require('which-key').register {
-        ['<leader>c'] = { name = '[C]ode', _ = 'which_key_ignore' },
-        ['<leader>d'] = { name = '[D]ocument', _ = 'which_key_ignore' },
-        ['<leader>r'] = { name = '[R]ename', _ = 'which_key_ignore' },
-        ['<leader>s'] = { name = '[S]earch', _ = 'which_key_ignore' },
-        ['<leader>w'] = { name = '[W]orkspace', _ = 'which_key_ignore' },
-      }
-    end,
-  },
   {
     'theprimeagen/harpoon',
     config = function()
       local mark = require 'harpoon.mark'
       local ui = require 'harpoon.ui'
+      local tmux = require 'harpoon.tmux'
+
+     -- vim.keymap.set('n', '<leader>t', tmux.gotoTerminal(1))
 
       vim.keymap.set('n', '<leader>a', mark.add_file)
       vim.keymap.set('n', '<C-e>', ui.toggle_quick_menu)
@@ -766,7 +753,6 @@ require('lazy').setup {
       },
     },
   },
-
   { -- Autocompletion
     'hrsh7th/nvim-cmp',
     event = 'InsertEnter',
@@ -859,6 +845,7 @@ require('lazy').setup {
       }
     end,
   },
+
   { 'catppuccin/nvim', name = 'catppuccin', priority = 1000 },
 
   { -- You can easily change to a different colorscheme.
@@ -917,30 +904,6 @@ require('lazy').setup {
 
       -- ... and there is more!
       --  Check out: https://github.com/echasnovski/mini.nvim
-    end,
-  },
-
-  { -- Highlight, edit, and navigate code
-    'nvim-treesitter/nvim-treesitter',
-    build = ':TSUpdate',
-    config = function()
-      -- [[ Configure Treesitter ]] See `:help nvim-treesitter`
-
-      ---@diagnostic disable-next-line: missing-fields
-      require('nvim-treesitter.configs').setup {
-        ensure_installed = { 'bash', 'c', 'html', 'lua', 'markdown', 'vim', 'vimdoc', 'odin', 'kotlin', 'java' },
-        -- Autoinstall languages that are not installed
-        auto_install = true,
-        highlight = { enable = true },
-        indent = { enable = true },
-      }
-
-      -- There are additional nvim-treesitter modules that you can use to interact
-      -- with nvim-treesitter. You should go explore a few and see what interests you:
-      --
-      --    - Incremental selection: Included, see `:help nvim-treesitter-incremental-selection-mod`
-      --    - Show your current context: https://github.com/nvim-treesitter/nvim-treesitter-context
-      --    - Treesitter + textobjects: https://github.com/nvim-treesitter/nvim-treesitter-textobjects
     end,
   },
 
