@@ -18,7 +18,7 @@ fi
 source "${ZINIT_HOME}/zinit.zsh"
 
 # Add in Powerleve10k
-zinit ice depth=1; zinit light romkatv/powerlevel10k
+#zinit ice depth=1; zinit light romkatv/powerlevel10k
 
 # Add in zsh plugins
 zinit light zsh-users/zsh-syntax-highlighting
@@ -78,6 +78,7 @@ alias ls='eza --no-filesize --icons --grid --color=always --no-user'
 alias inv='nvim $(fzf -m --preview="bat --color=always {}")'
 alias hg='kitten hyperlinked-grep'
 alias icat='kitten icat'
+alias df='dysk'
 
 # other Aliases shortcuts
 alias c="clear"
@@ -137,3 +138,4 @@ export BUN_INSTALL="$HOME/.bun"
 export PATH="$BUN_INSTALL/bin:$PATH"
 source /usr/share/zsh/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
 source /usr/share/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh
+eval "$(oh-my-posh init zsh --config 'https://raw.githubusercontent.com/JanDeDobbeleer/oh-my-posh/main/themes/nordtron.omp.json')"

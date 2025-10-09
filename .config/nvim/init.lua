@@ -503,6 +503,7 @@ require('lazy').setup {
     end,
   },
   { 'mfussenegger/nvim-jdtls' },
+  { 'timtro/glslView-nvim'},
   {
     'stevearc/conform.nvim',
     event = { 'BufReadPre', 'BufNewFile' },

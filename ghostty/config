@@ -1,0 +1,10 @@
+
+font-family = "GeistMono Regular"
+font-size = 10
+
+mouse-hide-while-typing = true
+background-opacity = 0.85
+
+window-decoration = false
+
+copy-on-select = true
