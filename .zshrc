@@ -12,7 +12,29 @@ plugins=(
 )
 
 source $ZSH/oh-my-zsh.sh
+VIM_MODE_VICMD_KEY='jk'
 
+# keybindings
+bindkey -v
+
+# History
+HISTSIZE=5000
+HISTFILE=~/.zsh_history
+SAVEHIST=$HISTSIZE
+setopt share_history
+setopt hist_expire_dups_first
+setopt hist_ignore_dups
+setopt hist_verify
+
+# completion using arrow keys (based on history)
+bindkey '^[[A' history-search-backward
+bindkey '^[[B' history-search-forward
+
+alias ls='eza --no-filesize --icons --grid --color=always --no-user'
+alias inv='nvim $(fzf -m --preview="bat --color=always {}")'
+alias hg='kitten hyperlinked-grep'
+alias icat='kitten icat'
+alias df='dysk'
 
 # Display Pokemon-colorscripts
 # Project page: https://gitlab.com/phoneybadger/pokemon-colorscripts#on-other-distros-and-macos
