@@ -6,12 +6,12 @@ local last_floaterm_toggle = 0
 local floaterm_debounce_ms = 500
 
 local function floaterm_toggle_debounced()
-  local now = vim.fn.reltimeofday()
-  local elapsed = (now[1] - last_floaterm_toggle) * 1000
+  local now = vim.loop.hrtime()
+  local elapsed = (now - last_floaterm_toggle) / 1e6
   if elapsed < floaterm_debounce_ms then
     return
   end
-  last_floaterm_toggle = now[1]
+  last_floaterm_toggle = now
   vim.cmd 'FloatermToggle'
 end
 
