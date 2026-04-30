@@ -3,7 +3,7 @@
 
 -- Float terminal debounce state
 local last_floaterm_toggle = 0
-local floaterm_debounce_ms = 500
+local floaterm_debounce_ms = 700
 
 local function floaterm_toggle_debounced()
   local now = vim.loop.hrtime()
@@ -18,7 +18,7 @@ end
 vim.api.nvim_create_autocmd('VimEnter', {
   group = vim.api.nvim_create_augroup('plugin-configs', { clear = true }),
   callback = function()
-    -- Float terminal toggle with debounce (500ms)
+    -- Float terminal toggle with debounce (700ms)
     vim.keymap.set('n', '<leader>t', floaterm_toggle_debounced, { desc = 'Toggle floating terminal' })
     vim.keymap.set('t', '<leader>t', floaterm_toggle_debounced, { desc = 'Toggle floating terminal' })
 
