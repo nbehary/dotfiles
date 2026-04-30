@@ -19,8 +19,7 @@ vim.keymap.set('i', 'jk', '<ESC>')
 -- NvimTree toggle
 vim.keymap.set('n', '<leader>pv', ':NvimTreeToggle<cr>')
 
--- Float terminal keybinding (must be set before floaterm loads)
-vim.g.floaterm_keymap_toggle = '<leader>t'
+-- Float terminal: disable automatic keymap, use custom debounced toggle instead
 
 -- [[ Setting options ]]
 -- See `:help vim.opt`

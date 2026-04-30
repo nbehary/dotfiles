@@ -1,9 +1,27 @@
 -- General Plugin Configuration
 -- Defer until plugins are available
 
+-- Float terminal debounce state
+local last_floaterm_toggle = 0
+local floaterm_debounce_ms = 300
+
+local function floaterm_toggle_debounced()
+  local now = vim.fn.reltimeofday()
+  local elapsed = (now[1] - last_floaterm_toggle) * 1000
+  if elapsed < floaterm_debounce_ms then
+    return
+  end
+  last_floaterm_toggle = now[1]
+  vim.cmd 'FloatermToggle'
+end
+
 vim.api.nvim_create_autocmd('VimEnter', {
   group = vim.api.nvim_create_augroup('plugin-configs', { clear = true }),
   callback = function()
+    -- Float terminal toggle with debounce (300ms)
+    vim.keymap.set('n', '<leader>t', floaterm_toggle_debounced, { desc = 'Toggle floating terminal' })
+    vim.keymap.set('t', '<leader>t', floaterm_toggle_debounced, { desc = 'Toggle floating terminal' })
+
     -- Gitsigns Configuration
     pcall(function()
       require('gitsigns').setup()
