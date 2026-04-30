@@ -1,102 +1,123 @@
--- Gitsigns Configuration
+-- General Plugin Configuration
+-- Defer until plugins are available
 
-require('gitsigns').setup()
-vim.keymap.set('n', '<leader>gp', ':Gitsigns preview_hunk <CR>', { desc = 'Preview git hunk' })
-vim.keymap.set('n', '<leader>gb', ':Gitsigns toggle_current_line_blame <CR>', { desc = 'Toggle git blame' })
+vim.api.nvim_create_autocmd('VimEnter', {
+  group = vim.api.nvim_create_augroup('plugin-configs', { clear = true }),
+  callback = function()
+    -- Gitsigns Configuration
+    pcall(function()
+      require('gitsigns').setup()
+      vim.keymap.set('n', '<leader>gp', ':Gitsigns preview_hunk <CR>', { desc = 'Preview git hunk' })
+      vim.keymap.set('n', '<leader>gb', ':Gitsigns toggle_current_line_blame <CR>', { desc = 'Toggle git blame' })
+    end)
 
--- Harpoon Configuration
+    -- Harpoon Configuration
+    pcall(function()
+      local mark = require 'harpoon.mark'
+      local ui = require 'harpoon.ui'
 
-local mark = require 'harpoon.mark'
-local ui = require 'harpoon.ui'
+      vim.keymap.set('n', '<leader>a', mark.add_file, { desc = 'Add file to harpoon' })
+      vim.keymap.set('n', '<C-e>', ui.toggle_quick_menu, { desc = 'Toggle harpoon menu' })
 
-vim.keymap.set('n', '<leader>a', mark.add_file, { desc = 'Add file to harpoon' })
-vim.keymap.set('n', '<C-e>', ui.toggle_quick_menu, { desc = 'Toggle harpoon menu' })
+      vim.keymap.set('n', '<C-h>', function()
+        ui.nav_file(1)
+      end, { desc = 'Navigate to harpoon file 1' })
+      vim.keymap.set('n', '<C-t>', function()
+        ui.nav_file(2)
+      end, { desc = 'Navigate to harpoon file 2' })
+      vim.keymap.set('n', '<C-n>', function()
+        ui.nav_file(3)
+      end, { desc = 'Navigate to harpoon file 3' })
+      vim.keymap.set('n', '<C-s>', function()
+        ui.nav_file(4)
+      end, { desc = 'Navigate to harpoon file 4' })
+    end)
 
-vim.keymap.set('n', '<C-h>', function()
-  ui.nav_file(1)
-end, { desc = 'Navigate to harpoon file 1' })
-vim.keymap.set('n', '<C-t>', function()
-  ui.nav_file(2)
-end, { desc = 'Navigate to harpoon file 2' })
-vim.keymap.set('n', '<C-n>', function()
-  ui.nav_file(3)
-end, { desc = 'Navigate to harpoon file 3' })
-vim.keymap.set('n', '<C-s>', function()
-  ui.nav_file(4)
-end, { desc = 'Navigate to harpoon file 4' })
+    -- Undotree Configuration
+    pcall(function()
+      vim.keymap.set('n', '<leader>u', vim.cmd.UndotreeToggle, { desc = 'Toggle undotree' })
+    end)
 
--- Undotree Configuration
+    -- Comment.nvim Configuration
+    pcall(function()
+      require('Comment').setup()
+    end)
 
-vim.keymap.set('n', '<leader>u', vim.cmd.UndotreeToggle, { desc = 'Toggle undotree' })
+    -- NvimTree Configuration
+    pcall(function()
+      require('nvim-tree').setup()
+    end)
 
--- Comment.nvim Configuration
+    -- Mini.nvim Configuration
+    pcall(function()
+      require('mini.ai').setup { n_lines = 500 }
+      require('mini.surround').setup()
 
-require('Comment').setup()
+      local statusline = require 'mini.statusline'
+      statusline.setup()
 
--- NvimTree Configuration
+      ---@diagnostic disable-next-line: duplicate-set-field
+      statusline.section_location = function()
+        return '%2l:%-2v'
+      end
+    end)
 
-require('nvim-tree').setup()
+    -- Todo Comments Configuration
+    pcall(function()
+      require('todo-comments').setup { signs = false }
+    end)
 
--- Mini.nvim Configuration
+    -- Edgy Configuration
+    pcall(function()
+      require('edgy').setup()
+    end)
 
-require('mini.ai').setup { n_lines = 500 }
-require('mini.surround').setup()
+    -- Aerial (Code Structure) Configuration
+    pcall(function()
+      require('aerial').setup {
+        backends = { 'lsp', 'treesitter' },
+        layout = {
+          min_width = 30,
+          default_direction = 'right',
+        },
+        filter_kind = {
+          'Class',
+          'Constructor',
+          'Enum',
+          'Function',
+          'Interface',
+          'Method',
+          'Module',
+          'Struct',
+          'Property',
+          'Field',
+        },
+      }
 
-local statusline = require 'mini.statusline'
-statusline.setup()
+      vim.keymap.set('n', '<leader>cs', '<cmd>AerialToggle!<CR>', { desc = '[C]ode [S]tructure (Aerial)' })
+      vim.keymap.set('n', '<leader>cn', '<cmd>AerialNavToggle<CR>', { desc = '[C]ode [N]avigation (Aerial)' })
+    end)
 
----@diagnostic disable-next-line: duplicate-set-field
-statusline.section_location = function()
-  return '%2l:%-2v'
-end
+    -- Leap Configuration
+    pcall(function()
+      local leap = require 'leap'
+      leap.add_default_mappings()
+      leap.opts.case_sensitive = true
+    end)
 
--- Todo Comments Configuration
+    -- Neogit Configuration
+    pcall(function()
+      require('neogit').setup {
+        integrations = {
+          diffview = true,
+        },
+      }
+    end)
 
-require('todo-comments').setup { signs = false }
-
--- Edgy Configuration
-
-require('edgy').setup()
-
--- Aerial (Code Structure) Configuration
-
-require('aerial').setup {
-  backends = { 'lsp', 'treesitter' },
-  layout = {
-    min_width = 30,
-    default_direction = 'right',
-  },
-  filter_kind = {
-    'Class',
-    'Constructor',
-    'Enum',
-    'Function',
-    'Interface',
-    'Method',
-    'Module',
-    'Struct',
-    'Property',
-    'Field',
-  },
-}
-
-vim.keymap.set('n', '<leader>cs', '<cmd>AerialToggle!<CR>', { desc = '[C]ode [S]tructure (Aerial)' })
-vim.keymap.set('n', '<leader>cn', '<cmd>AerialNavToggle<CR>', { desc = '[C]ode [N]avigation (Aerial)' })
-
--- Leap Configuration
-
-local leap = require 'leap'
-leap.add_default_mappings()
-leap.opts.case_sensitive = true
-
--- Neogit Configuration
-
-require('neogit').setup {
-  integrations = {
-    diffview = true,
-  },
-}
-
--- Fidget Configuration (LSP progress)
-
-require('fidget').setup()
+    -- Fidget Configuration (LSP progress)
+    pcall(function()
+      require('fidget').setup()
+    end)
+  end,
+  once = true,
+})
