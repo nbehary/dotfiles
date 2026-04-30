@@ -99,6 +99,8 @@ alias fman="compgen -c | fzf | xargs man"
 # zoxide (called from ~/scripts/)
 alias nzo="~/scripts/zoxide_openfiles_nvim.sh"
 
+alias nvim='nvim --listen /tmp/nvim-$(date +%s).sock'
+
 export PATH=$PATH:~/homebrew/bin:~/src/Odin:~/.local/bin
 
 # Shell initegrations
@@ -123,7 +125,7 @@ source ~/scripts/fzf-git.sh
 
 eval "$(zoxide init --cmd cd zsh)"
 
-export PATH=/home/nate/src/Odin/:/home/nate/.local/roc/:$PATH
+export PATH=/home/nate/odin/:/home/nate/.local/roc/:$PATH
 export PATH=$HOME/.local/bin:$PATH
 
 export NVM_DIR="$HOME/.nvm"
@@ -136,6 +138,12 @@ export NVM_DIR="$HOME/.nvm"
 # bun
 export BUN_INSTALL="$HOME/.bun"
 export PATH="$BUN_INSTALL/bin:$PATH"
-source /usr/share/zsh/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
-source /usr/share/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh
+#misc
+export JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home"
+export PATH="$JAVA_HOME/bin:$PATH"
+source /opt/homebrew/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
+source /opt/homebrew/share/zsh-autosuggestions/zsh-autosuggestions.zsh
 eval "$(oh-my-posh init zsh --config 'https://raw.githubusercontent.com/JanDeDobbeleer/oh-my-posh/main/themes/nordtron.omp.json')"
+export PATH="/opt/homebrew/opt/rustup/bin:$PATH"
+export PATH="/Users/nbehary/.cargo/bin:$PATH"
+export PATH="/Users/nbehary/Library/Android/sdk/platform-tools:$PATH"

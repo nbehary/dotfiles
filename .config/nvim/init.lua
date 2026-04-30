@@ -89,6 +89,9 @@ P.S. You can delete this when you're done too. It's your config now! :)
 --  NOTE: Must happen before plugins are loaded (otherwise wrong leader will be used)
 vim.g.mapleader = ' '
 vim.g.maplocalleader = ' '
+
+-- Point Neovim at the dedicated pynvim virtualenv (avoids Homebrew PEP 668 restriction)
+vim.g.python3_host_prog = vim.fn.expand '~/.venv/nvim/bin/python3'
 vim.keymap.set('i', 'jk', '<ESC>')
 vim.keymap.set('n', '<leader>pv', ':NvimTreeToggle<cr>')
 
@@ -243,10 +246,14 @@ vim.opt.rtp:prepend(lazypath)
 --  To update plugins, you can run
 --    :Lazy update
 --
+-- Set floaterm toggle key before lazy loads the plugin (applies to all modes including terminal)
+vim.g.floaterm_keymap_toggle = '<leader>t'
+
 -- NOTE: Here is where you install your plugins.
 require('lazy').setup {
   -- NOTE: Plugins can be added with a link (or for a github repo: 'owner/repo' link).
   'tpope/vim-sleuth', -- Detect tabstop and shiftwidth automatically
+  'github/copilot.vim', -- GitHub Copilot
   'Tetralux/odin.vim',
   {
     'folke/edgy.nvim',
@@ -314,6 +321,9 @@ require('lazy').setup {
       { '<leader>lg', '<cmd>LazyGit<cr>', desc = 'Open Lazy Git' },
     },
   },
+  {
+    'voldikss/vim-floaterm',
+  },
 
   -- NOTE: Plugins can also be configured to run lua code when they are loaded.
   --
@@ -330,14 +340,13 @@ require('lazy').setup {
   -- after the plugin has been loaded:
   --  config = function() ... end
   {
-    'ggandor/leap.nvim',
+    url = 'https://codeberg.org/andyg/leap.nvim',
     config = function()
       local leap = require 'leap'
       leap.add_default_mappings()
       leap.opts.case_sensitive = true
     end,
   },
-
   {
     'theprimeagen/harpoon',
     config = function()
@@ -381,7 +390,6 @@ require('lazy').setup {
   { -- Fuzzy Finder (files, lsp, etc)
     'nvim-telescope/telescope.nvim',
     event = 'VimEnter',
-    branch = '0.1.x',
     dependencies = {
       'nvim-lua/plenary.nvim',
       { -- If encountering errors, see telescope-fzf-native README for install instructions
@@ -429,12 +437,15 @@ require('lazy').setup {
       require('telescope').setup {
         -- You can put your default mappings / updates / etc. in here
         --  All the info you're looking for is in `:help telescope.setup()`
-        --
-        -- defaults = {
-        --   mappings = {
-        --     i = { ['<c-enter>'] = 'to_fuzzy_refine' },
-        --   },
-        -- },
+        defaults = {
+          file_ignore_patterns = {
+            'gradle/',
+            'build/',
+          },
+          preview = {
+            treesitter = false,
+          },
+        },
         -- pickers = {}
         extensions = {
           ['ui-select'] = {
@@ -670,7 +681,34 @@ require('lazy').setup {
         -- But for many setups, the LSP (`tsserver`) will work just fine
         -- tsserver = {},
         --
-        kotlin_language_server = {},
+        kotlin_language_server = {
+          root_dir = function(fname)
+            return require('lspconfig.util').root_pattern(
+              'settings.gradle',
+              'settings.gradle.kts',
+              'build.gradle',
+              'build.gradle.kts',
+              'gradlew'
+            )(fname)
+          end,
+          settings = {
+            kotlin = {
+              compiler = {
+                jvm = {
+                  target = '21',
+                },
+              },
+              linting = {
+                debounceTime = 250,
+              },
+              completion = {
+                snippets = {
+                  enabled = true,
+                },
+              },
+            },
+          },
+        },
 
         lua_ls = {
           -- cmd = {...},
@@ -717,6 +755,8 @@ require('lazy').setup {
       require('mason-tool-installer').setup {
         ensure_installed = {
           'ktlint',
+          'jdtls',
+          'kotlin-language-server',
         },
       }
 
@@ -730,30 +770,14 @@ require('lazy').setup {
             server.capabilities = vim.tbl_deep_extend('force', {}, capabilities, server.capabilities or {})
             require('lspconfig')[server_name].setup(server)
           end,
+          -- jdtls is managed by nvim-jdtls via after/ftplugin/java.lua
+          ['jdtls'] = function() end,
         },
       }
     end,
   },
 
-  { -- Autoformat
-    'stevearc/conform.nvim',
-    opts = {
-      notify_on_error = false,
-      format_on_save = {
-        timeout_ms = 500,
-        lsp_fallback = true,
-      },
-      formatters_by_ft = {
-        lua = { 'stylua' },
-        -- Conform can also run multiple formatters sequentially
-        -- python = { "isort", "black" },
-        --
-        -- You can use a sub-list to tell conform to run *until* a formatter
-        -- is found.
-        -- javascript = { { "prettierd", "prettier" } },
-      },
-    },
-  },
+  -- NOTE: Duplicate conform entry removed; primary config is above (line ~510)
   { -- Autocompletion
     'hrsh7th/nvim-cmp',
     event = 'InsertEnter',
@@ -919,6 +943,59 @@ require('lazy').setup {
   --
   -- require 'kickstart.plugins.debug',
   -- require 'kickstart.plugins.indent_line',
+
+  { -- Treesitter: syntax highlighting, text objects, and more
+    'nvim-treesitter/nvim-treesitter',
+    build = ':TSUpdate',
+    lazy = false,
+    main = 'nvim-treesitter',
+    opts = {
+      ensure_installed = {
+        'kotlin',
+        'java',
+        'groovy',
+        'xml',
+        'toml',
+        'lua',
+        'markdown',
+        'json',
+        'yaml',
+      },
+      highlight = { enable = true },
+      indent = { enable = true },
+    },
+  },
+
+  { -- Code outline / structure panel (like Android Studio's Structure view)
+    'stevearc/aerial.nvim',
+    dependencies = {
+      'nvim-treesitter/nvim-treesitter',
+      'nvim-tree/nvim-web-devicons',
+    },
+    config = function()
+      require('aerial').setup {
+        backends = { 'lsp', 'treesitter' },
+        layout = {
+          min_width = 30,
+          default_direction = 'right',
+        },
+        filter_kind = {
+          'Class',
+          'Constructor',
+          'Enum',
+          'Function',
+          'Interface',
+          'Method',
+          'Module',
+          'Struct',
+          'Property',
+          'Field',
+        },
+      }
+      vim.keymap.set('n', '<leader>cs', '<cmd>AerialToggle!<CR>', { desc = '[C]ode [S]tructure (Aerial)' })
+      vim.keymap.set('n', '<leader>cn', '<cmd>AerialNavToggle<CR>', { desc = '[C]ode [N]avigation (Aerial)' })
+    end,
+  },
 
   -- NOTE: The import below can automatically add your own plugins, configuration, etc from `lua/custom/plugins/*.lua`
   --    This is the easiest way to modularize your config.
