@@ -19,7 +19,13 @@ vim.keymap.set('i', 'jk', '<ESC>')
 -- NvimTree toggle
 vim.keymap.set('n', '<leader>pv', ':NvimTreeToggle<cr>')
 
--- Float terminal: disable automatic keymap, use custom debounced toggle instead
+-- [[ Gradle.nvim keybindings ]]
+vim.keymap.set({ 'n', 'v' }, '<leader>Gg', '<cmd>Gradle<cr>', { desc = 'Gradle Projects' })
+vim.keymap.set({ 'n', 'v' }, '<leader>Gf', '<cmd>GradleFavorites<cr>', { desc = 'Gradle Favorite Commands' })
+
+-- [[ Diagnostic keybindings ]]
+vim.keymap.set('n', '<leader>dw', vim.diagnostic.open_float, { desc = 'Open diagnostics' })
+vim.keymap.set('n', '<leader>dq', vim.diagnostic.setloclist, { desc = 'Diagnostics to loclist' })
 
 -- [[ Setting options ]]
 -- See `:help vim.opt`
