@@ -19,8 +19,8 @@ vim.api.nvim_create_autocmd('VimEnter', {
   group = vim.api.nvim_create_augroup('plugin-configs', { clear = true }),
   callback = function()
     -- Float terminal toggle with debounce (700ms)
-    vim.keymap.set('n', '<leader>t', floaterm_toggle_debounced, { desc = 'Toggle floating terminal' })
-    vim.keymap.set('t', '<leader>t', floaterm_toggle_debounced, { desc = 'Toggle floating terminal' })
+    vim.keymap.set('n', '<leader>;', floaterm_toggle_debounced, { desc = 'Toggle floating terminal' })
+    vim.keymap.set('t', '<leader>;', floaterm_toggle_debounced, { desc = 'Toggle floating terminal' })
 
     -- Gitsigns Configuration
     pcall(function()
