@@ -13,6 +13,9 @@ vim.g.maplocalleader = ' '
 -- Point Neovim at the dedicated pynvim virtualenv (avoids Homebrew PEP 668 restriction)
 vim.g.python3_host_prog = vim.fn.expand '~/.venv/nvim/bin/python3'
 
+-- Start listening on /tmp/nvim socket for MCP servers (Claude Desktop, Copilot CLI)
+vim.fn.serverstart '/tmp/nvim'
+
 -- Insert-mode escape
 vim.keymap.set('i', 'jk', '<ESC>')
 
