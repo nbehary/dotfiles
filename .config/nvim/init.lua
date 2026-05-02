@@ -361,6 +361,32 @@ vim.api.nvim_create_autocmd('LspAttach', {
   end,
 })
 
+-- LSP utility commands (replaces nvim-lspconfig's :LspLog, :LspRestart, :LspInfo)
+vim.api.nvim_create_user_command('LspLog', function()
+  vim.cmd('edit ' .. vim.lsp.get_log_path())
+end, { desc = 'Open LSP log' })
+
+vim.api.nvim_create_user_command('LspRestart', function()
+  local bufnr = vim.api.nvim_get_current_buf()
+  for _, client in ipairs(vim.lsp.get_clients({ bufnr = bufnr })) do
+    vim.lsp.stop_client(client.id, true)
+  end
+  vim.defer_fn(function()
+    vim.api.nvim_exec_autocmds('FileType', { buf = bufnr })
+  end, 500)
+end, { desc = 'Restart LSP clients for current buffer' })
+
+vim.api.nvim_create_user_command('LspInfo', function()
+  local clients = vim.lsp.get_clients({ bufnr = 0 })
+  if #clients == 0 then
+    vim.notify('No LSP clients attached', vim.log.levels.INFO)
+    return
+  end
+  for _, c in ipairs(clients) do
+    vim.notify(string.format('[%d] %s  root: %s', c.id, c.name, c.root_dir or '?'), vim.log.levels.INFO)
+  end
+end, { desc = 'Show attached LSP clients' })
+
 local capabilities = vim.tbl_deep_extend(
   'force',
   vim.lsp.protocol.make_client_capabilities(),
@@ -370,21 +396,16 @@ local capabilities = vim.tbl_deep_extend(
 -- Apply cmp capabilities to all auto-enabled servers
 vim.lsp.config('*', { capabilities = capabilities })
 
--- kotlin-language-server must run under Java 21; Java 26 crashes its version parser
-vim.lsp.config('kotlin_language_server', {
-  cmd_env = {
-    JAVA_HOME = '/usr/lib/jvm/java-21-openjdk',
-    ANDROID_HOME = os.getenv('ANDROID_HOME') or vim.fn.expand('~/Android/Sdk'),
-  },
-  settings = {
-    kotlin = {
-      compiler = { jvm = { target = '21' } },
-      linting = { debounceTime = 250 },
-      completion = { snippets = { enabled = true } },
-    },
-  },
+vim.lsp.config('kotlin_lsp', {
+  cmd = (function()
+    local kotlin_lsp_dir = vim.fn.glob(vim.fn.expand('~/.local/share/nvim/mason/packages/kotlin-lsp/kotlin-server-*'), false, true)[1]
+    if kotlin_lsp_dir then
+      return { kotlin_lsp_dir .. '/bin/intellij-server' }
+    end
+    return { 'kotlin-language-server' }
+  end)(),
 })
-vim.lsp.enable('kotlin_language_server')
+vim.lsp.enable('kotlin_lsp')
 
 vim.lsp.config('lua_ls', {
   settings = {
@@ -404,10 +425,10 @@ vim.lsp.config('lua_ls', {
 
 require('mason').setup()
 require('mason-tool-installer').setup({
-  ensure_installed = { 'ktlint', 'jdtls', 'kotlin-language-server', 'stylua' },
+  ensure_installed = { 'ktlint', 'jdtls', 'kotlin-lsp', 'stylua' },
 })
 require('mason-lspconfig').setup({
-  automatic_enable = { exclude = { 'jdtls', 'kotlin_language_server' } },
+  automatic_enable = { exclude = { 'jdtls', 'kotlin_lsp' } },
 })
 
 -- nvim-cmp
