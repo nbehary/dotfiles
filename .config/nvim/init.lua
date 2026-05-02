@@ -119,6 +119,7 @@ vim.pack.add({
   'https://github.com/NeogitOrg/neogit',
 
   -- UI
+  'https://github.com/voldikss/vim-floaterm',
   'https://github.com/folke/edgy.nvim',
   'https://github.com/folke/todo-comments.nvim',
   'https://github.com/echasnovski/mini.nvim',
@@ -166,6 +167,10 @@ require('Comment').setup()
 
 -- nvim-tree
 require('nvim-tree').setup()
+
+-- vim-floaterm
+vim.keymap.set('n', '<leader>;', '<cmd>FloatermToggle<cr>', { desc = 'Toggle floating terminal' })
+vim.keymap.set('t', '<leader>;', '<cmd>FloatermToggle<cr>', { desc = 'Toggle floating terminal' })
 
 -- edgy
 require('edgy').setup()
@@ -356,57 +361,53 @@ vim.api.nvim_create_autocmd('LspAttach', {
   end,
 })
 
-local capabilities = vim.lsp.protocol.make_client_capabilities()
-capabilities = vim.tbl_deep_extend('force', capabilities, require('cmp_nvim_lsp').default_capabilities())
+local capabilities = vim.tbl_deep_extend(
+  'force',
+  vim.lsp.protocol.make_client_capabilities(),
+  require('cmp_nvim_lsp').default_capabilities()
+)
 
-local servers = {
-  kotlin_language_server = {
-    root_dir = function(fname)
-      return require('lspconfig.util').root_pattern(
-        'settings.gradle', 'settings.gradle.kts',
-        'build.gradle', 'build.gradle.kts', 'gradlew'
-      )(fname)
-    end,
-    settings = {
-      kotlin = {
-        compiler = { jvm = { target = '21' } },
-        linting = { debounceTime = 250 },
-        completion = { snippets = { enabled = true } },
-      },
+-- Apply cmp capabilities to all auto-enabled servers
+vim.lsp.config('*', { capabilities = capabilities })
+
+-- kotlin-language-server must run under Java 21; Java 26 crashes its version parser
+vim.lsp.config('kotlin_language_server', {
+  cmd_env = {
+    JAVA_HOME = '/usr/lib/jvm/java-21-openjdk',
+    ANDROID_HOME = os.getenv('ANDROID_HOME') or vim.fn.expand('~/Android/Sdk'),
+  },
+  settings = {
+    kotlin = {
+      compiler = { jvm = { target = '21' } },
+      linting = { debounceTime = 250 },
+      completion = { snippets = { enabled = true } },
     },
   },
-  lua_ls = {
-    settings = {
-      Lua = {
-        runtime = { version = 'LuaJIT' },
-        workspace = {
-          checkThirdParty = false,
-          library = {
-            '${3rd}/luv/library',
-            unpack(vim.api.nvim_get_runtime_file('', true)),
-          },
-        },
-        completion = {
-          callSnippet = 'Replace',
+})
+vim.lsp.enable('kotlin_language_server')
+
+vim.lsp.config('lua_ls', {
+  settings = {
+    Lua = {
+      runtime = { version = 'LuaJIT' },
+      workspace = {
+        checkThirdParty = false,
+        library = {
+          '${3rd}/luv/library',
+          unpack(vim.api.nvim_get_runtime_file('', true)),
         },
       },
+      completion = { callSnippet = 'Replace' },
     },
   },
-}
+})
 
 require('mason').setup()
 require('mason-tool-installer').setup({
   ensure_installed = { 'ktlint', 'jdtls', 'kotlin-language-server', 'stylua' },
 })
 require('mason-lspconfig').setup({
-  handlers = {
-    function(server_name)
-      local server = servers[server_name] or {}
-      server.capabilities = vim.tbl_deep_extend('force', {}, capabilities, server.capabilities or {})
-      require('lspconfig')[server_name].setup(server)
-    end,
-    ['jdtls'] = function() end, -- managed by after/ftplugin/java.lua
-  },
+  automatic_enable = { exclude = { 'jdtls', 'kotlin_language_server' } },
 })
 
 -- nvim-cmp
@@ -445,10 +446,17 @@ cmp.setup({
 })
 
 -- nvim-treesitter
-require('nvim-treesitter.configs').setup({
-  ensure_installed = { 'kotlin', 'java', 'groovy', 'xml', 'toml', 'lua', 'markdown', 'json', 'yaml' },
-  highlight = { enable = true },
-  indent = { enable = true },
+vim.api.nvim_create_autocmd('VimEnter', {
+  once = true,
+  callback = function()
+    local ok, configs = pcall(require, 'nvim-treesitter.configs')
+    if not ok then return end
+    configs.setup({
+      ensure_installed = { 'kotlin', 'java', 'groovy', 'xml', 'toml', 'lua', 'markdown', 'json', 'yaml' },
+      highlight = { enable = true },
+      indent = { enable = true },
+    })
+  end,
 })
 
 -- Colorscheme (load last)

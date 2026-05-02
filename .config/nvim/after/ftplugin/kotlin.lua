@@ -1,7 +1,7 @@
 local function fold_imports()
   local first, last
   for i, line in ipairs(vim.api.nvim_buf_get_lines(0, 0, -1, false)) do
-    if line:match('^import ') then
+    if line:match '^import ' then
       first = first or i
       last = i
     end
@@ -34,4 +34,9 @@ if root_dir then
   vim.keymap.set('n', '<leader>gc', function()
     vim.cmd('!' .. gradlew .. ' clean')
   end, { buffer = 0, desc = '[G]radle [C]lean' })
+
+  vim.keymap.set('n', '<leader>gr', function()
+    local apk = root_dir .. '/app/build/outputs/apk/debug/app-debug.apk'
+    vim.cmd('!' .. gradlew .. ' assembleDebug && android run --apks ' .. apk)
+  end, { buffer = 0, desc = '[G]radle [R]un (build + install)' })
 end
