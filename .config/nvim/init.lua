@@ -97,6 +97,8 @@ vim.pack.add({
   'https://github.com/folke/snacks.nvim',
 
   -- Editing
+  'https://github.com/nvim-treesitter/nvim-treesitter',
+  'https://codeberg.org/andyg/leap.nvim',
   'https://github.com/tpope/vim-sleuth',
   'https://github.com/Tetralux/odin.vim',
   'https://github.com/tidalcycles/vim-tidal',
@@ -109,6 +111,7 @@ vim.pack.add({
   -- File navigation
   'https://github.com/nvim-tree/nvim-tree.lua',
   'https://github.com/stevearc/oil.nvim',
+  'https://github.com/stevearc/aerial.nvim',
 
   -- Git
   'https://github.com/lewis6991/gitsigns.nvim',
@@ -149,9 +152,14 @@ vim.pack.add({
   -- Colors
   { src = 'https://github.com/catppuccin/nvim', name = 'catppuccin' },
   'https://github.com/rebelot/kanagawa.nvim',
+  'https://github.com/RRethy/base16-nvim',
 })
 
 -- [[ Plugin Configuration ]]
+
+-- leap
+vim.keymap.set({ 'n', 'x', 'o' }, 's', '<Plug>(leap)')
+vim.keymap.set({ 'n', 'x', 'o' }, 'S', '<Plug>(leap-from-window)')
 
 -- Comment
 require('Comment').setup()
@@ -161,6 +169,18 @@ require('nvim-tree').setup()
 
 -- edgy
 require('edgy').setup()
+
+-- aerial
+require('aerial').setup({
+  backends = { 'lsp', 'treesitter' },
+  layout = { min_width = 30, default_direction = 'right' },
+  filter_kind = {
+    'Class', 'Constructor', 'Enum', 'Function', 'Interface',
+    'Method', 'Module', 'Struct', 'Property', 'Field',
+  },
+})
+vim.keymap.set('n', '<leader>cs', '<cmd>AerialToggle!<CR>', { desc = '[C]ode [S]tructure (Aerial)' })
+vim.keymap.set('n', '<leader>cn', '<cmd>AerialNavToggle<CR>', { desc = '[C]ode [N]avigation (Aerial)' })
 
 -- gitsigns
 require('gitsigns').setup({
@@ -340,7 +360,21 @@ local capabilities = vim.lsp.protocol.make_client_capabilities()
 capabilities = vim.tbl_deep_extend('force', capabilities, require('cmp_nvim_lsp').default_capabilities())
 
 local servers = {
-  kotlin_language_server = {},
+  kotlin_language_server = {
+    root_dir = function(fname)
+      return require('lspconfig.util').root_pattern(
+        'settings.gradle', 'settings.gradle.kts',
+        'build.gradle', 'build.gradle.kts', 'gradlew'
+      )(fname)
+    end,
+    settings = {
+      kotlin = {
+        compiler = { jvm = { target = '21' } },
+        linting = { debounceTime = 250 },
+        completion = { snippets = { enabled = true } },
+      },
+    },
+  },
   lua_ls = {
     settings = {
       Lua = {
@@ -362,7 +396,7 @@ local servers = {
 
 require('mason').setup()
 require('mason-tool-installer').setup({
-  ensure_installed = { 'ktlint' },
+  ensure_installed = { 'ktlint', 'jdtls', 'kotlin-language-server', 'stylua' },
 })
 require('mason-lspconfig').setup({
   handlers = {
@@ -371,6 +405,7 @@ require('mason-lspconfig').setup({
       server.capabilities = vim.tbl_deep_extend('force', {}, capabilities, server.capabilities or {})
       require('lspconfig')[server_name].setup(server)
     end,
+    ['jdtls'] = function() end, -- managed by after/ftplugin/java.lua
   },
 })
 
@@ -409,8 +444,14 @@ cmp.setup({
   },
 })
 
+-- nvim-treesitter
+require('nvim-treesitter.configs').setup({
+  ensure_installed = { 'kotlin', 'java', 'groovy', 'xml', 'toml', 'lua', 'markdown', 'json', 'yaml' },
+  highlight = { enable = true },
+  indent = { enable = true },
+})
+
 -- Colorscheme (load last)
-vim.cmd.colorscheme('catppuccin-mocha')
-vim.cmd.hi('Comment gui=none')
+require('plugins.dankcolors')
 
 -- vim: ts=2 sts=2 sw=2 et
