@@ -117,11 +117,9 @@ vim.api.nvim_create_autocmd('VimEnter', {
     end)
 
     -- Leap Configuration
-    pcall(function()
-      local leap = require 'leap'
-      leap.add_default_mappings()
-      leap.opts.case_sensitive = true
-    end)
+    vim.keymap.set({ 'n', 'x', 'o' }, 's', '<Plug>(leap)')
+    vim.keymap.set({ 'n', 'x', 'o' }, 'S', '<Plug>(leap-from-window)')
+    require('leap').opts.case_sensitive = true
 
     -- Neogit Configuration
     pcall(function()

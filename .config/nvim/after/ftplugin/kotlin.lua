@@ -37,4 +37,9 @@ if root_dir then
   vim.keymap.set('n', '<leader>gc', function()
     vim.cmd('!' .. gradlew .. ' clean')
   end, { buffer = 0, desc = '[G]radle [C]lean' })
+
+  vim.keymap.set('n', '<leader>gr', function()
+    local apk = root_dir .. '/app/build/outputs/apk/debug/app-debug.apk'
+    vim.cmd('!' .. gradlew .. ' assembleDebug && android run --apks ' .. apk)
+  end, { buffer = 0, desc = '[G]radle [R]un (build + install)' })
 end

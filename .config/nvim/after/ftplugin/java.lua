@@ -23,14 +23,18 @@ local root_dir = vim.fs.dirname(vim.fs.find({ 'gradlew', 'settings.gradle', 'set
 local project_name = vim.fn.fnamemodify(root_dir or vim.fn.getcwd(), ':p:h:t')
 local workspace_dir = vim.fn.stdpath 'data' .. '/jdtls-workspace/' .. project_name
 
--- Prefer Android Studio's bundled JDK
+-- Prefer Android Studio's bundled JDK; fall back to JAVA_HOME or system java
 local java_cmd = 'java'
-local android_studio_java = '/Applications/Android Studio.app/Contents/jbr/Contents/Home/bin/java'
-if vim.fn.executable(android_studio_java) == 1 then
-  java_cmd = android_studio_java
+local as_jbr = nil
+for _, dir in ipairs({ vim.fn.expand('~/android-studio'), '/opt/android-studio' }) do
+  if vim.fn.executable(dir .. '/jbr/bin/java') == 1 then
+    java_cmd = dir .. '/jbr/bin/java'
+    as_jbr = dir .. '/jbr'
+    break
+  end
 end
+local jdk_home = as_jbr or os.getenv('JAVA_HOME') or '/usr/lib/jvm/java-21-openjdk'
 
--- Extended capabilities: merge cmp_nvim_lsp + jdtls extras
 local capabilities = vim.tbl_deep_extend(
   'force',
   vim.lsp.protocol.make_client_capabilities(),
@@ -41,7 +45,7 @@ extendedClientCapabilities.resolveAdditionalTextEditsSupport = true
 
 local config = {
   cmd = {
-    vim.fn.expand '~/.local/share/nvim/mason/bin/jdtls',
+    vim.fn.expand('~/.local/share/nvim/mason/bin/jdtls'),
     '--java-executable', java_cmd,
     '-data', workspace_dir,
   },
@@ -59,18 +63,11 @@ local config = {
           'io.mockk.MockKKt.*',
         },
         filteredTypes = {
-          'com.sun.*',
-          'io.micrometer.shaded.*',
-          'java.awt.*',
-          'jdk.*',
-          'sun.*',
+          'com.sun.*', 'io.micrometer.shaded.*', 'java.awt.*', 'jdk.*', 'sun.*',
         },
       },
       sources = {
-        organizeImports = {
-          starThreshold = 9999,
-          staticStarThreshold = 9999,
-        },
+        organizeImports = { starThreshold = 9999, staticStarThreshold = 9999 },
       },
       codeGeneration = {
         toString = {
@@ -80,11 +77,7 @@ local config = {
       },
       configuration = {
         runtimes = {
-          {
-            name = 'JavaSE-21',
-            path = '/Applications/Android Studio.app/Contents/jbr/Contents/Home',
-            default = true,
-          },
+          { name = 'JavaSE-21', path = jdk_home, default = true },
         },
       },
     },
