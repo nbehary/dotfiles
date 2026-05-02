@@ -400,7 +400,7 @@ vim.lsp.config('kotlin_lsp', {
   cmd = (function()
     local kotlin_lsp_dir = vim.fn.glob(vim.fn.expand('~/.local/share/nvim/mason/packages/kotlin-lsp/kotlin-server-*'), false, true)[1]
     if kotlin_lsp_dir then
-      return { kotlin_lsp_dir .. '/bin/intellij-server' }
+      return { kotlin_lsp_dir .. '/bin/intellij-server', '--stdio' }
     end
     return { 'kotlin-language-server' }
   end)(),
