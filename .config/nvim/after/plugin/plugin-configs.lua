@@ -22,6 +22,14 @@ vim.api.nvim_create_autocmd('VimEnter', {
     vim.keymap.set('n', '<leader>;', floaterm_toggle_debounced, { desc = 'Toggle floating terminal' })
     vim.keymap.set('t', '<leader>;', floaterm_toggle_debounced, { desc = 'Toggle floating terminal' })
 
+    -- Float terminal: new, next, prev
+    vim.keymap.set('n', '<leader>T', '<cmd>FloatermNew<CR>', { desc = 'New floating terminal' })
+    vim.keymap.set('t', '<leader>T', '<cmd>FloatermNew<CR>', { desc = 'New floating terminal' })
+    vim.keymap.set('n', ']t', '<cmd>FloatermNext<CR>', { desc = 'Next floating terminal' })
+    vim.keymap.set('t', ']t', '<cmd>FloatermNext<CR>', { desc = 'Next floating terminal' })
+    vim.keymap.set('n', '[t', '<cmd>FloatermPrev<CR>', { desc = 'Prev floating terminal' })
+    vim.keymap.set('t', '[t', '<cmd>FloatermPrev<CR>', { desc = 'Prev floating terminal' })
+
     -- Gitsigns Configuration
     pcall(function()
       require('gitsigns').setup()

@@ -194,39 +194,44 @@ local function android_launch_and_attach()
       if component == '' then return end
     end
 
-    -- Step 1: launch in debug-wait mode
-    vim.notify('Starting ' .. app_id .. ' (debug-wait)…', vim.log.levels.INFO)
-    vim.system({ 'adb', 'shell', 'am', 'start', '-D', '-n', component }, {}, function(launch)
-      if launch.code ~= 0 then
-        vim.schedule(function()
-          vim.notify('am start failed: ' .. (launch.stderr or ''), vim.log.levels.ERROR)
-        end)
-        return
-      end
-
-      -- Step 2: wait for PID
-      wait_for_pid(app_id, 500, 12, function(pid)
-        if not pid then
-          vim.notify('Timed out waiting for ' .. app_id .. ' to start', vim.log.levels.ERROR)
+    -- Step 1: force-stop any existing process so we always get a fresh debug-wait instance
+    vim.system({ 'adb', 'shell', 'am', 'force-stop', app_id }, {}, function(_)
+      -- Step 2: launch in debug-wait mode
+      vim.schedule(function()
+        vim.notify('Starting ' .. app_id .. ' (debug-wait)…', vim.log.levels.INFO)
+      end)
+      vim.system({ 'adb', 'shell', 'am', 'start', '-D', '-n', component }, {}, function(launch)
+        if launch.code ~= 0 then
+          vim.schedule(function()
+            vim.notify('am start failed: ' .. (launch.stderr or ''), vim.log.levels.ERROR)
+          end)
           return
         end
 
-        -- Step 3: clean up stale forward, then set new one
-        vim.system({ 'adb', 'forward', '--remove', 'tcp:5005' }, {}, function(_)
-          vim.system({ 'adb', 'forward', 'tcp:5005', 'jdwp:' .. pid }, {}, function(fwd)
-            vim.schedule(function()
-              if fwd.code ~= 0 then
-                vim.notify('adb forward failed: ' .. (fwd.stderr or ''), vim.log.levels.ERROR)
-                return
-              end
-              vim.notify('Forwarded tcp:5005 → jdwp:' .. pid .. '  (' .. app_id .. ')', vim.log.levels.INFO)
-              -- Step 4: wait until the JDWP socket is actually accepting connections
-              wait_for_port('127.0.0.1', 5005, 15000, function(ready)
-                if not ready then
-                  vim.notify('JDWP port 5005 not ready after 15s — is the app waiting for a debugger?', vim.log.levels.ERROR)
+        -- Step 3: wait for PID (fresh process after force-stop)
+        wait_for_pid(app_id, 500, 20, function(pid)
+          if not pid then
+            vim.notify('Timed out waiting for ' .. app_id .. ' to start', vim.log.levels.ERROR)
+            return
+          end
+
+          -- Step 4: clean up stale forward, then set new one
+          vim.system({ 'adb', 'forward', '--remove', 'tcp:5005' }, {}, function(_)
+            vim.system({ 'adb', 'forward', 'tcp:5005', 'jdwp:' .. pid }, {}, function(fwd)
+              vim.schedule(function()
+                if fwd.code ~= 0 then
+                  vim.notify('adb forward failed: ' .. (fwd.stderr or ''), vim.log.levels.ERROR)
                   return
                 end
-                dap.run(run_config)
+                vim.notify('Forwarded tcp:5005 → jdwp:' .. pid .. '  (' .. app_id .. ')', vim.log.levels.INFO)
+                -- Step 5: wait until the JDWP socket is actually accepting connections
+                wait_for_port('127.0.0.1', 5005, 15000, function(ready)
+                  if not ready then
+                    vim.notify('JDWP port 5005 not ready after 15s', vim.log.levels.ERROR)
+                    return
+                  end
+                  dap.run(run_config)
+                end)
               end)
             end)
           end)

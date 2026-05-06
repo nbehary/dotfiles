@@ -42,15 +42,4 @@ if root_dir then
     local apk = root_dir .. '/app/build/outputs/apk/debug/app-debug.apk'
     vim.cmd('!' .. gradlew .. ' assembleDebug && android run --apks ' .. apk)
   end, { buffer = 0, desc = '[G]radle [R]un (build + install)' })
-
-  -- Start jdtls for Android projects so <leader>da can use its debug adapter.
-  -- jdtls coexists with kotlin_language_server; it's used here purely for debugging.
-  if vim.fn.filereadable(root_dir .. '/app/src/main/AndroidManifest.xml') == 1 then
-    local ok, start_jdtls = pcall(require, 'jdtls_start')
-    if ok then
-      vim.schedule(function()
-        start_jdtls { java_keymaps = false }
-      end)
-    end
-  end
 end
