@@ -1,0 +1,79 @@
+#!/usr/bin/env bash
+# Build, install, and launch an Android app in debug mode, then forward JDWP.
+#
+# Usage: android-debug-launch [LOCAL_PORT]
+#
+# Run from the project root (where gradlew lives). Reads applicationId from
+# build.gradle.kts or build.gradle (looking in current dir and ./app/).
+# Default local port is 5005.
+
+set -euo pipefail
+
+LOCAL_PORT="${1:-5005}"
+
+log() { printf '\033[1;34m==>\033[0m %s\n' "$*"; }
+err() { printf '\033[1;31mERROR:\033[0m %s\n' "$*" >&2; }
+
+# --- find applicationId in gradle files ---
+PACKAGE=""
+for f in build.gradle.kts app/build.gradle.kts build.gradle app/build.gradle; do
+  [[ -f "$f" ]] || continue
+  PACKAGE=$(grep -m 1 -oE 'applicationId[[:space:]]*=?[[:space:]]*"[^"]+"' "$f" \
+            | grep -oE '"[^"]+"' | tr -d '"' || true)
+  [[ -n "$PACKAGE" ]] && break
+done
+
+if [[ -z "$PACKAGE" ]]; then
+  err "Could not find applicationId in any build.gradle(.kts)"
+  exit 1
+fi
+log "Package: $PACKAGE"
+
+# --- check device ---
+if ! adb get-state >/dev/null 2>&1; then
+  err "No device/emulator connected. Run: adb devices"
+  exit 1
+fi
+
+# --- build + install ---
+if [[ ! -x ./gradlew ]]; then
+  err "./gradlew not found or not executable. Run from project root."
+  exit 1
+fi
+log "Building and installing (./gradlew installDebug)..."
+./gradlew installDebug
+
+# --- find launcher activity ---
+log "Resolving launcher activity..."
+ACTIVITY=$(adb shell cmd package resolve-activity --brief \
+            -c android.intent.category.LAUNCHER "$PACKAGE" \
+            | tail -n 1 | tr -d '\r')
+
+if [[ -z "$ACTIVITY" || "$ACTIVITY" == "No activity found" ]]; then
+  err "Could not resolve launcher activity for $PACKAGE"
+  exit 1
+fi
+log "Activity: $ACTIVITY"
+
+# --- launch in debug-wait mode (-D pauses until debugger attaches) ---
+log "Launching in debug mode..."
+adb shell am start -D -W -n "$ACTIVITY" >/dev/null
+
+# --- wait for PID (app may take a moment to register) ---
+PID=""
+for _ in 1 2 3 4 5 6 7 8 9 10; do
+  PID=$(adb shell pidof "$PACKAGE" | tr -d '\r' || true)
+  [[ -n "$PID" ]] && break
+  sleep 0.3
+done
+
+if [[ -z "$PID" ]]; then
+  err "App did not start (no PID for $PACKAGE)"
+  exit 1
+fi
+log "PID: $PID"
+
+# --- forward JDWP ---
+adb forward "tcp:${LOCAL_PORT}" "jdwp:${PID}" >/dev/null
+log "JDWP forwarded: localhost:${LOCAL_PORT} -> ${PACKAGE} (pid ${PID})"
+log "Ready. Attach your debugger now."

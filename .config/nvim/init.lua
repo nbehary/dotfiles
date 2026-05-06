@@ -95,6 +95,11 @@ vim.pack.add({
   'https://github.com/nvim-tree/nvim-web-devicons',
   'https://github.com/sindrets/diffview.nvim',
   'https://github.com/folke/snacks.nvim',
+  'https://github.com/nvim-neotest/nvim-nio',
+
+  -- Debugging
+  'https://github.com/mfussenegger/nvim-dap',
+  'https://github.com/rcarriga/nvim-dap-ui',
 
   -- Editing
   'https://github.com/nvim-treesitter/nvim-treesitter',
@@ -428,7 +433,7 @@ vim.lsp.config('lua_ls', {
 
 require('mason').setup()
 require('mason-tool-installer').setup({
-  ensure_installed = { 'ktlint', 'jdtls', 'kotlin-lsp', 'stylua' },
+  ensure_installed = { 'ktlint', 'jdtls', 'kotlin-lsp', 'kotlin-debug-adapter', 'stylua' },
 })
 require('mason-lspconfig').setup({
   automatic_enable = { exclude = { 'jdtls', 'kotlin_lsp' } },
@@ -482,6 +487,82 @@ vim.api.nvim_create_autocmd('VimEnter', {
     })
   end,
 })
+
+-- DAP
+local dap = require('dap')
+local dapui = require('dapui')
+
+dapui.setup({
+  icons = { expanded = '▾', collapsed = '▸', current_frame = '*' },
+  controls = {
+    icons = {
+      pause = '⏸', play = '▶',
+      step_into = '⏎', step_over = '⏭', step_out = '⏮', step_back = 'b',
+      run_last = '▶▶', terminate = '⏹', disconnect = '⏏',
+    },
+  },
+})
+
+dap.listeners.after.event_initialized['dapui_config'] = dapui.open
+dap.listeners.before.event_terminated['dapui_config'] = dapui.close
+dap.listeners.before.event_exited['dapui_config'] = dapui.close
+
+vim.keymap.set('n', '<F5>', dap.continue, { desc = 'Debug: Start/Continue' })
+vim.keymap.set('n', '<F1>', dap.step_into, { desc = 'Debug: Step Into' })
+vim.keymap.set('n', '<F2>', dap.step_over, { desc = 'Debug: Step Over' })
+vim.keymap.set('n', '<F3>', dap.step_out, { desc = 'Debug: Step Out' })
+vim.keymap.set('n', '<leader>b', dap.toggle_breakpoint, { desc = 'Debug: Toggle Breakpoint' })
+vim.keymap.set('n', '<leader>B', function()
+  dap.set_breakpoint(vim.fn.input('Breakpoint condition: '))
+end, { desc = 'Debug: Set Breakpoint' })
+vim.keymap.set('n', '<F7>', dapui.toggle, { desc = 'Debug: Toggle UI' })
+
+-- kotlin-debug-adapter (installed via mason) speaks DAP and translates to JDWP.
+-- It's used for both Kotlin and Java filetypes since Android apps run on a JVM
+-- regardless of source language.
+dap.adapters.kotlin = {
+  type = 'executable',
+  command = vim.fn.stdpath('data') .. '/mason/bin/kotlin-debug-adapter',
+}
+
+local android_attach_config = {
+  type = 'kotlin',
+  request = 'attach',
+  name = 'Attach to Android (adb forward, port 5005)',
+  hostName = 'localhost',
+  port = 5005,
+  timeout = 2000,
+  projectRoot = '${workspaceFolder}',
+}
+
+dap.configurations.kotlin = { android_attach_config }
+dap.configurations.java = { android_attach_config }
+
+-- AndroidDebug: build, install, launch, and forward JDWP via shell script,
+-- then start the DAP attach session.
+vim.api.nvim_create_user_command('AndroidDebug', function()
+  local script = vim.fn.expand('~/dotfiles/bin/android-debug-launch')
+  if vim.fn.executable(script) ~= 1 then
+    vim.notify('android-debug-launch not found or not executable: ' .. script, vim.log.levels.ERROR)
+    return
+  end
+
+  vim.notify('Building and launching Android app...', vim.log.levels.INFO)
+
+  vim.system({ script }, { cwd = vim.fn.getcwd(), text = true }, function(obj)
+    vim.schedule(function()
+      if obj.code ~= 0 then
+        vim.notify('android-debug-launch failed:\n' .. (obj.stderr or '') .. (obj.stdout or ''),
+          vim.log.levels.ERROR)
+        return
+      end
+      vim.notify(obj.stdout or 'Ready.', vim.log.levels.INFO)
+      dap.continue()
+    end)
+  end)
+end, { desc = 'Build, install, and debug current Android project' })
+
+vim.keymap.set('n', '<leader>da', '<cmd>AndroidDebug<CR>', { desc = 'Android Debug' })
 
 -- Colorscheme (load last)
 require('plugins.dankcolors')
