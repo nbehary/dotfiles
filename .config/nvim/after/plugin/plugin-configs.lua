@@ -19,8 +19,8 @@ vim.api.nvim_create_autocmd('VimEnter', {
   group = vim.api.nvim_create_augroup('plugin-configs', { clear = true }),
   callback = function()
     -- Float terminal toggle with debounce (700ms)
-    vim.keymap.set('n', '<leader>t', floaterm_toggle_debounced, { desc = 'Toggle floating terminal' })
-    vim.keymap.set('t', '<leader>t', floaterm_toggle_debounced, { desc = 'Toggle floating terminal' })
+    vim.keymap.set('n', '<leader>;', floaterm_toggle_debounced, { desc = 'Toggle floating terminal' })
+    vim.keymap.set('t', '<leader>;', floaterm_toggle_debounced, { desc = 'Toggle floating terminal' })
 
     -- Gitsigns Configuration
     pcall(function()
@@ -49,6 +49,11 @@ vim.api.nvim_create_autocmd('VimEnter', {
       vim.keymap.set('n', '<C-s>', function()
         ui.nav_file(4)
       end, { desc = 'Navigate to harpoon file 4' })
+
+      vim.keymap.set('n', '<leader>hc', function()
+        mark.clear_all()
+        vim.notify('Harpoon list cleared', vim.log.levels.INFO)
+      end, { desc = 'Clear all harpoon marks' })
     end)
 
     -- Undotree Configuration
@@ -117,11 +122,9 @@ vim.api.nvim_create_autocmd('VimEnter', {
     end)
 
     -- Leap Configuration
-    pcall(function()
-      local leap = require 'leap'
-      leap.add_default_mappings()
-      leap.opts.case_sensitive = true
-    end)
+    vim.keymap.set({ 'n', 'x', 'o' }, 's', '<Plug>(leap)')
+    vim.keymap.set({ 'n', 'x', 'o' }, 'S', '<Plug>(leap-from-window)')
+    require('leap').opts.case_sensitive = true
 
     -- Neogit Configuration
     pcall(function()
@@ -135,6 +138,13 @@ vim.api.nvim_create_autocmd('VimEnter', {
     -- Fidget Configuration (LSP progress)
     pcall(function()
       require('fidget').setup()
+    end)
+
+    -- CopilotChat Configuration
+    pcall(function()
+      require('CopilotChat').setup()
+      vim.keymap.set('n', '<leader>ai', ':CopilotChat<cr>', { desc = 'CopilotChat' })
+      vim.keymap.set('v', '<leader>ai', ':CopilotChat<cr>', { desc = 'CopilotChat' })
     end)
   end,
   once = true,

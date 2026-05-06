@@ -39,7 +39,7 @@ function create_floating_window(opts)
   return { buf = buf,win = win}
 end
 
---vim.keymap.set('n', '<leader>t', function()
+--vim.keymap.set('n', '<leader>;', function()
 vim.api.nvim_create_user_command("Floatterminal", function()
     if not vim.nvim_win_is_valid(state.floating.win) then
       state.floating = create_floating_window()

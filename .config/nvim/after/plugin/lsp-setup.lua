@@ -15,36 +15,20 @@ vim.api.nvim_create_autocmd('VimEnter', {
     local capabilities = vim.lsp.protocol.make_client_capabilities()
     capabilities = vim.tbl_deep_extend('force', capabilities, require('cmp_nvim_lsp').default_capabilities())
 
-    local servers = {
-      kotlin_language_server = {
-        root_dir = function(fname)
-          return require('lspconfig.util').root_pattern(
-            'settings.gradle',
-            'settings.gradle.kts',
-            'build.gradle',
-            'build.gradle.kts',
-            'gradlew'
-          )(fname)
-        end,
-        settings = {
-          kotlin = {
-            compiler = {
-              jvm = {
-                target = '21',
-              },
-            },
-            linting = {
-              debounceTime = 250,
-            },
-            completion = {
-              snippets = {
-                enabled = true,
-              },
-            },
-          },
-        },
-      },
+    -- kotlin-lsp (JetBrains intellij-server) needs --stdio for stdin/stdout LSP mode
+    vim.lsp.config('kotlin_lsp', {
+      cmd = (function()
+        local kotlin_lsp_dir = vim.fn.glob(vim.fn.expand('~/.local/share/nvim/mason/packages/kotlin-lsp/kotlin-server-*'), false, true)[1]
+        if kotlin_lsp_dir then
+          return { kotlin_lsp_dir .. '/bin/intellij-server', '--stdio' }
+        end
+        return { 'kotlin-language-server' }
+      end)(),
+      capabilities = capabilities,
+    })
+    vim.lsp.enable('kotlin_lsp')
 
+    local servers = {
       lua_ls = {
         settings = {
           Lua = {
@@ -68,8 +52,10 @@ vim.api.nvim_create_autocmd('VimEnter', {
       ensure_installed = {
         'ktlint',
         'jdtls',
-        'kotlin-language-server',
+        'kotlin-lsp',
         'stylua',
+        'java-debug-adapter',
+        'kotlin-debug-adapter',
       },
     }
 
@@ -81,6 +67,7 @@ vim.api.nvim_create_autocmd('VimEnter', {
           lspconfig[server_name].setup(server)
         end,
         ['jdtls'] = function() end,
+        ['kotlin_lsp'] = function() end,
       },
     }
   end,

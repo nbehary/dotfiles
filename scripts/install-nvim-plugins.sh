@@ -67,6 +67,9 @@ install_plugin "folke/todo-comments.nvim" "$START_DIR/todo-comments.nvim"
 install_plugin "echasnovski/mini.nvim" "$START_DIR/mini.nvim"
 install_plugin "nvim-treesitter/nvim-treesitter" "$START_DIR/nvim-treesitter"
 install_plugin "stevearc/aerial.nvim" "$START_DIR/aerial.nvim"
+install_plugin "mfussenegger/nvim-dap" "$START_DIR/nvim-dap"
+install_plugin "rcarriga/nvim-dap-ui" "$START_DIR/nvim-dap-ui"
+install_plugin "nvim-neotest/nvim-nio" "$START_DIR/nvim-nio"
 
 # Optional plugins (loaded with packadd)
 echo "Installing optional plugins..."

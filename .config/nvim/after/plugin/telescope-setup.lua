@@ -11,9 +11,12 @@ vim.api.nvim_create_autocmd('VimEnter', {
 
     telescope.setup {
       defaults = {
+        find_command = { 'fd', '--type', 'f', '--strip-cwd-prefix' },
         file_ignore_patterns = {
-          'gradle/',
-          'build/',
+          '^gradle/',
+          '/gradle/',
+          '^build/',
+          '/build/',
         },
         preview = {
           treesitter = false,
