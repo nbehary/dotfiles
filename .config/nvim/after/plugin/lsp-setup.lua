@@ -54,6 +54,8 @@ vim.api.nvim_create_autocmd('VimEnter', {
         'jdtls',
         'kotlin-lsp',
         'stylua',
+        'java-debug-adapter',
+        'kotlin-debug-adapter',
       },
     }
 
