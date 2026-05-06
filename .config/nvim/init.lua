@@ -169,8 +169,11 @@ require('Comment').setup()
 require('nvim-tree').setup()
 
 -- vim-floaterm
-vim.keymap.set('n', '<leader>;', '<cmd>FloatermToggle<cr>', { desc = 'Toggle floating terminal' })
-vim.keymap.set('t', '<leader>;', '<cmd>FloatermToggle<cr>', { desc = 'Toggle floating terminal' })
+vim.keymap.set({ 'n', 't' }, '<leader>;', '<cmd>FloatermToggle<cr>', { desc = 'Toggle floating terminal' })
+vim.keymap.set({ 'n', 't' }, '<leader>fn', '<cmd>FloatermNew<cr>', { desc = 'New floating terminal' })
+vim.keymap.set({ 'n', 't' }, '<leader>f]', '<cmd>FloatermNext<cr>', { desc = 'Next floating terminal' })
+vim.keymap.set({ 'n', 't' }, '<leader>f[', '<cmd>FloatermPrev<cr>', { desc = 'Previous floating terminal' })
+vim.keymap.set({ 'n', 't' }, '<leader>fk', '<cmd>FloatermKill<cr>', { desc = 'Kill floating terminal' })
 
 -- edgy
 require('edgy').setup()

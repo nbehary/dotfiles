@@ -141,3 +141,5 @@ source /usr/share/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh
 eval "$(oh-my-posh init zsh --config 'https://raw.githubusercontent.com/JanDeDobbeleer/oh-my-posh/main/themes/nordtron.omp.json')"
 export ANDROID_HOME=$HOME/Android/Sdk
 export ANDROID_NDK_HOME=$HOME/Android/Sdk/ndk/28.2.13676358/
+export BLENDER_HOST="localhost"
+export BLENDER_PORT=9876

@@ -75,6 +75,16 @@ No custom keymaps. Use `:Neogit` to open.
 | --- | --- |
 | `<leader>u` | Toggle undotree |
 
+## Floaterm (`voldikss/vim-floaterm`)
+
+| Keys | Mode | Action |
+| --- | --- | --- |
+| `<leader>;` | n, t | Toggle floating terminal |
+| `<leader>fn` | n, t | New floating terminal |
+| `<leader>f]` | n, t | Next floating terminal |
+| `<leader>f[` | n, t | Previous floating terminal |
+| `<leader>fk` | n, t | Kill floating terminal |
+
 ## Claude Code (`coder/claudecode.nvim`)
 
 | Keys | Mode | Action |
