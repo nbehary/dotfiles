@@ -18,8 +18,8 @@ vim.api.nvim_create_autocmd('VimEnter', {
     local capabilities = vim.lsp.protocol.make_client_capabilities()
     capabilities = vim.tbl_deep_extend('force', capabilities, require('cmp_nvim_lsp').default_capabilities())
 
-    -- kotlin-lsp (JetBrains intellij-server) needs --stdio for stdin/stdout LSP mode
-    vim.lsp.config('kotlin_lsp', {
+    -- Kotlin LSP configuration using traditional lspconfig.setup() for auto-attach
+    local kotlin_lsp_config = {
       cmd = (function()
         local mason_dir = vim.fn.expand '~/.local/share/nvim/mason/packages/kotlin-lsp'
         local kotlin_server_dir = vim.fn.glob(mason_dir .. '/kotlin-server-*', false, true)[1]
@@ -62,7 +62,7 @@ vim.api.nvim_create_autocmd('VimEnter', {
           vim.notify('Kotlin LSP indexing workspace…', vim.log.levels.INFO)
           vim.schedule(function()
             if client.server_capabilities.workspaceSymbolProvider then
-              local success = pcall(function()
+              pcall(function()
                 client.request('workspace/symbol', { query = '*' }, function()
                   vim.notify('Kotlin LSP indexing complete', vim.log.levels.INFO)
                 end, bufnr)
@@ -71,8 +71,10 @@ vim.api.nvim_create_autocmd('VimEnter', {
           end)
         end
       end,
-    })
-    vim.lsp.enable 'kotlin_lsp'
+    }
+
+    -- Set up kotlin_lsp directly (not through mason-lspconfig handler)
+    lspconfig.kotlin_lsp.setup(kotlin_lsp_config)
 
     local servers = {
       lua_ls = {
@@ -123,10 +125,7 @@ vim.api.nvim_create_autocmd('VimEnter', {
           lspconfig[server_name].setup(server)
         end,
         ['jdtls'] = function() end,
-        -- kotlin_lsp (JetBrains IntelliJ server) is configured manually above
-        -- via vim.lsp.config/vim.lsp.enable and handles Android generated sources
-        -- (BuildConfig, R, etc.) through Gradle project import. Suppress the
-        -- community kotlin_language_server which has no Android/AGP awareness.
+        -- kotlin_lsp is configured manually above via lspconfig.kotlin_lsp.setup()
         ['kotlin_lsp'] = function() end,
         ['kotlin_language_server'] = function() end,
       },
