@@ -18,15 +18,54 @@ vim.api.nvim_create_autocmd('VimEnter', {
     -- kotlin-lsp (JetBrains intellij-server) needs --stdio for stdin/stdout LSP mode
     vim.lsp.config('kotlin_lsp', {
       cmd = (function()
-        local kotlin_lsp_dir = vim.fn.glob(vim.fn.expand('~/.local/share/nvim/mason/packages/kotlin-lsp/kotlin-server-*'), false, true)[1]
+        local kotlin_lsp_dir = vim.fn.glob(vim.fn.expand '~/.local/share/nvim/mason/packages/kotlin-lsp/kotlin-server-*', false, true)[1]
         if kotlin_lsp_dir then
           return { kotlin_lsp_dir .. '/bin/intellij-server', '--stdio' }
         end
         return { 'kotlin-language-server' }
       end)(),
       capabilities = capabilities,
+      settings = {
+        kotlin = {
+          compiler = {
+            jvm = {
+              target = '21',
+            },
+          },
+          linting = {
+            enabled = true,
+          },
+          completion = {
+            snippets = {
+              enabled = true,
+            },
+          },
+          diagnostics = {
+            enabled = true,
+          },
+        },
+      },
+      root_dir = require('lspconfig.util').root_pattern('build.gradle', 'build.gradle.kts', 'settings.gradle', 'settings.gradle.kts', '.git'),
+      init_options = {
+        storagePath = vim.fn.expand '~/.cache/kotlin-lsp',
+      },
+      on_attach = function(client, bufnr)
+        -- Force workspace scan for Android project on first attach
+        if client.name == 'kotlin_lsp' then
+          vim.notify('Kotlin LSP indexing workspace…', vim.log.levels.INFO)
+          vim.schedule(function()
+            if client.server_capabilities.workspaceSymbolProvider then
+              local success = pcall(function()
+                client.request('workspace/symbol', { query = '*' }, function()
+                  vim.notify('Kotlin LSP indexing complete', vim.log.levels.INFO)
+                end, bufnr)
+              end)
+            end
+          end)
+        end
+      end,
     })
-    vim.lsp.enable('kotlin_lsp')
+    vim.lsp.enable 'kotlin_lsp'
 
     local servers = {
       lua_ls = {
@@ -57,7 +96,17 @@ vim.api.nvim_create_autocmd('VimEnter', {
         'java-debug-adapter',
         'kotlin-debug-adapter',
       },
+      skip_update = false,
     }
+
+    -- Explicitly disable kotlin-language-server to prevent auto-installation
+    local registry = require 'mason-registry'
+    registry.refresh(function()
+      local pkg = registry.get_package 'kotlin-language-server'
+      if pkg:is_installed() then
+        pkg:uninstall()
+      end
+    end)
 
     require('mason-lspconfig').setup {
       handlers = {
@@ -67,8 +116,14 @@ vim.api.nvim_create_autocmd('VimEnter', {
           lspconfig[server_name].setup(server)
         end,
         ['jdtls'] = function() end,
+        -- kotlin_lsp (JetBrains IntelliJ server) is configured manually above
+        -- via vim.lsp.config/vim.lsp.enable and handles Android generated sources
+        -- (BuildConfig, R, etc.) through Gradle project import. Suppress the
+        -- community kotlin_language_server which has no Android/AGP awareness.
         ['kotlin_lsp'] = function() end,
+        ['kotlin_language_server'] = function() end,
       },
+      automatic_installation = false, -- Don't auto-install; only use ensure_installed
     }
   end,
   once = true,
