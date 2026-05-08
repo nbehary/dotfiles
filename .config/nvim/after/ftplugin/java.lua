@@ -96,8 +96,8 @@ local config = {
     vim.keymap.set('v', '<leader>cv', function() jdtls.extract_variable(true) end, opts)
 
     opts.desc = 'Extract Constant'
-    vim.keymap.set('n', '<leader>cc', jdtls.extract_constant, opts)
-    vim.keymap.set('v', '<leader>cc', function() jdtls.extract_constant(true) end, opts)
+    vim.keymap.set('n', '<leader>ce', jdtls.extract_constant, opts)
+    vim.keymap.set('v', '<leader>ce', function() jdtls.extract_constant(true) end, opts)
 
     opts.desc = 'Extract Method'
     vim.keymap.set('v', '<leader>cm', function() jdtls.extract_method(true) end, opts)

@@ -34,7 +34,7 @@ vim.api.nvim_create_autocmd('VimEnter', {
     pcall(function()
       require('gitsigns').setup()
       vim.keymap.set('n', '<leader>gp', ':Gitsigns preview_hunk <CR>', { desc = 'Preview git hunk' })
-      vim.keymap.set('n', '<leader>gb', ':Gitsigns toggle_current_line_blame <CR>', { desc = 'Toggle git blame' })
+      vim.keymap.set('n', '<leader>gl', ':Gitsigns toggle_current_line_blame <CR>', { desc = 'Toggle git blame' })
     end)
 
     -- Harpoon Configuration

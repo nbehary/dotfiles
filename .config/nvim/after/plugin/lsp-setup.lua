@@ -4,6 +4,9 @@
 vim.api.nvim_create_autocmd('VimEnter', {
   group = vim.api.nvim_create_augroup('lsp-setup-defer', { clear = true }),
   callback = function()
+    -- Enable verbose LSP logging
+    vim.lsp.set_log_level 'debug'
+
     local ok, lspconfig = pcall(require, 'lspconfig')
     if not ok then
       return
@@ -18,9 +21,13 @@ vim.api.nvim_create_autocmd('VimEnter', {
     -- kotlin-lsp (JetBrains intellij-server) needs --stdio for stdin/stdout LSP mode
     vim.lsp.config('kotlin_lsp', {
       cmd = (function()
-        local kotlin_lsp_dir = vim.fn.glob(vim.fn.expand '~/.local/share/nvim/mason/packages/kotlin-lsp/kotlin-server-*', false, true)[1]
-        if kotlin_lsp_dir then
-          return { kotlin_lsp_dir .. '/bin/intellij-server', '--stdio' }
+        local mason_dir = vim.fn.expand '~/.local/share/nvim/mason/packages/kotlin-lsp'
+        local kotlin_server_dir = vim.fn.glob(mason_dir .. '/kotlin-server-*', false, true)[1]
+        if kotlin_server_dir then
+          local server_path = kotlin_server_dir .. '/bin/intellij-server'
+          if vim.fn.executable(server_path) == 1 then
+            return { server_path, '--stdio' }
+          end
         end
         return { 'kotlin-language-server' }
       end)(),

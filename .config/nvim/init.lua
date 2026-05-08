@@ -14,7 +14,15 @@ vim.g.maplocalleader = ' '
 vim.g.python3_host_prog = vim.fn.expand '~/.venv/nvim/bin/python3'
 
 -- Start listening on /tmp/nvim socket for MCP servers (Claude Desktop, Copilot CLI)
-vim.fn.serverstart '/tmp/nvim'
+-- Remove stale socket file, then start; silently skip if another instance owns it
+local nvim_sock = '/tmp/nvim'
+if vim.uv.fs_stat(nvim_sock) then
+  os.remove(nvim_sock)
+end
+local ok, err = pcall(vim.fn.serverstart, nvim_sock)
+if not ok then
+  vim.notify('serverstart(/tmp/nvim) skipped: ' .. err, vim.log.levels.WARN)
+end
 
 -- Insert-mode escape
 vim.keymap.set('i', 'jk', '<ESC>')
