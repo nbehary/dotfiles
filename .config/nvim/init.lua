@@ -564,6 +564,19 @@ end, { desc = 'Build, install, and debug current Android project' })
 
 vim.keymap.set('n', '<leader>da', '<cmd>AndroidDebug<CR>', { desc = 'Android Debug' })
 
+-- Android Logcat
+local logcat = require('custom.logcat')
+vim.api.nvim_create_user_command('AndroidLogcat', logcat.start, { desc = 'Start Android Logcat' })
+vim.api.nvim_create_user_command('AndroidLogcatToggle', logcat.toggle, { desc = 'Toggle Android Logcat Window' })
+vim.api.nvim_create_user_command('AndroidLogcatMax', logcat.maximize, { desc = 'Maximize/Restore Android Logcat Window' })
+vim.api.nvim_create_user_command('AndroidLogcatStop', logcat.stop, { desc = 'Stop Android Logcat' })
+
+vim.keymap.set('n', '<leader>dl', '<cmd>AndroidLogcatToggle<CR>', { desc = 'Android [L]ogcat' })
+vim.keymap.set('n', '<leader>dm', '<cmd>AndroidLogcatMax<CR>', { desc = 'Android Logcat [M]aximize' })
+
+-- Odin
+vim.keymap.set('n', '<leader>or', '<cmd>FloatermNew --autoclose=0 odin run .<CR>', { desc = '[O]din [R]un .' })
+
 -- Colorscheme (load last)
 require('plugins.dankcolors')
 
