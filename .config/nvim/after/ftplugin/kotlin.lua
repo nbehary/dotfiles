@@ -63,20 +63,19 @@ if root_dir then
   if vim.fn.executable 'android' == 1 then
     -- Find the debug APK: check conventional path first, then glob
     local function find_debug_apk()
-      local conventional = root_dir .. '/app/build/outputs/apk/debug/app-debug.apk'
+      local conventional = root_dir .. '/app/build/outputs/apk/firebaseCt/debug/app-firebase-ct-debug.apk'
       if vim.fn.filereadable(conventional) == 1 then
         return conventional
       end
-      local found = vim.fn.glob(root_dir .. '/**/apk/debug/*.apk', false, true)
+      local found = vim.fn.glob(root_dir .. '/**/apk/firebaseCt/debug/*.apk', false, true)
       return found[1]
     end
 
-    local default_apk = root_dir .. '/app/build/outputs/apk/debug/app-debug.apk'
+    local default_apk = root_dir .. '/app/build/outputs/apk/firebaseCt/debug/app-firebase-ct-debug.apk'
 
-    -- Build with saved install task, then deploy and launch on connected device
+    -- Build with hardcoded task, then deploy and launch on connected device
     vim.keymap.set('n', '<leader>gr', function()
-      local install_task = project_config.get_install_task(root_dir) or 'assembleDebug'
-      vim.cmd('!' .. gradlew .. ' ' .. install_task .. ' && android run --apks ' .. vim.fn.shellescape(default_apk))
+      vim.cmd('!' .. gradlew .. ' installFirebaseCtDebug && android run --apks ' .. vim.fn.shellescape(default_apk))
     end, { buffer = 0, desc = '[G]radle [R]un on device (build + deploy)' })
 
     -- Deploy existing APK without rebuilding
