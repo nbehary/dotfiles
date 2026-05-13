@@ -14,7 +14,15 @@ vim.g.maplocalleader = ' '
 vim.g.python3_host_prog = vim.fn.expand '~/.venv/nvim/bin/python3'
 
 -- Start listening on /tmp/nvim socket for MCP servers (Claude Desktop, Copilot CLI)
-vim.fn.serverstart '/tmp/nvim'
+-- Remove stale socket file, then start; silently skip if another instance owns it
+local nvim_sock = '/tmp/nvim'
+if vim.uv.fs_stat(nvim_sock) then
+  os.remove(nvim_sock)
+end
+local ok, err = pcall(vim.fn.serverstart, nvim_sock)
+if not ok then
+  vim.notify('serverstart(/tmp/nvim) skipped: ' .. err, vim.log.levels.WARN)
+end
 
 -- Insert-mode escape
 vim.keymap.set('i', 'jk', '<ESC>')
@@ -32,6 +40,30 @@ vim.keymap.set({ 'n', 'v' }, '<leader>Gf', '<cmd>GradleFavorites<cr>', { desc = 
 -- [[ Diagnostic keybindings ]]
 vim.keymap.set('n', '<leader>dw', vim.diagnostic.open_float, { desc = 'Open diagnostics' })
 vim.keymap.set('n', '<leader>dq', vim.diagnostic.setloclist, { desc = 'Diagnostics to loclist' })
+vim.keymap.set('n', ']d', vim.diagnostic.goto_next, { desc = 'Next diagnostic' })
+vim.keymap.set('n', '[d', vim.diagnostic.goto_prev, { desc = 'Prev diagnostic' })
+vim.keymap.set('n', ']e', function()
+  vim.diagnostic.goto_next { severity = vim.diagnostic.severity.ERROR }
+end, { desc = 'Next error' })
+vim.keymap.set('n', '[e', function()
+  vim.diagnostic.goto_prev { severity = vim.diagnostic.severity.ERROR }
+end, { desc = 'Prev error' })
+
+-- [[ Tab navigation ]]
+vim.keymap.set('n', '<leader>tn', '<cmd>tabnext<cr>', { desc = 'Next tab' })
+vim.keymap.set('n', '<leader>tp', '<cmd>tabprev<cr>', { desc = 'Prev tab' })
+vim.keymap.set('n', '<leader>tN', '<cmd>tabnew<cr>', { desc = 'New tab' })
+vim.keymap.set('n', '<leader>td', '<cmd>tabclose<cr>', { desc = 'Close tab' })
+
+-- [[ Diagnostic display ]]
+vim.diagnostic.config {
+  virtual_text = { prefix = '●' },
+  signs = true,
+  underline = true,
+  update_in_insert = false,
+  severity_sort = true,
+  float = { border = 'rounded', source = true },
+}
 
 -- [[ Setting options ]]
 -- See `:help vim.opt`

@@ -22,11 +22,23 @@ vim.api.nvim_create_autocmd('VimEnter', {
     vim.keymap.set('n', '<leader>;', floaterm_toggle_debounced, { desc = 'Toggle floating terminal' })
     vim.keymap.set('t', '<leader>;', floaterm_toggle_debounced, { desc = 'Toggle floating terminal' })
 
+    -- Float terminal: new, next, prev
+    vim.keymap.set('n', '<leader>T', '<cmd>FloatermNew<CR>', { desc = 'New floating terminal' })
+    vim.keymap.set('t', '<leader>T', '<cmd>FloatermNew<CR>', { desc = 'New floating terminal' })
+    vim.keymap.set('n', ']t', '<cmd>FloatermNext<CR>', { desc = 'Next floating terminal' })
+    vim.keymap.set('t', ']t', '<cmd>FloatermNext<CR>', { desc = 'Next floating terminal' })
+    vim.keymap.set('n', '[t', '<cmd>FloatermPrev<CR>', { desc = 'Prev floating terminal' })
+    vim.keymap.set('t', '[t', '<cmd>FloatermPrev<CR>', { desc = 'Prev floating terminal' })
+
     -- Gitsigns Configuration
     pcall(function()
       require('gitsigns').setup()
       vim.keymap.set('n', '<leader>gp', ':Gitsigns preview_hunk <CR>', { desc = 'Preview git hunk' })
-      vim.keymap.set('n', '<leader>gb', ':Gitsigns toggle_current_line_blame <CR>', { desc = 'Toggle git blame' })
+      vim.keymap.set('n', '<leader>gl', ':Gitsigns toggle_current_line_blame <CR>', { desc = 'Toggle git blame' })
+      vim.keymap.set('n', '<leader>gd', ':DiffviewOpen<CR>', { desc = 'Open diffview (all changes)' })
+      vim.keymap.set('n', '<leader>gD', function()
+        vim.cmd('DiffviewOpen HEAD -- ' .. vim.fn.expand('%'))
+      end, { desc = 'Diff current file' })
     end)
 
     -- Harpoon Configuration
@@ -122,9 +134,18 @@ vim.api.nvim_create_autocmd('VimEnter', {
     end)
 
     -- Leap Configuration
-    vim.keymap.set({ 'n', 'x', 'o' }, 's', '<Plug>(leap)')
-    vim.keymap.set({ 'n', 'x', 'o' }, 'S', '<Plug>(leap-from-window)')
-    require('leap').opts.case_sensitive = true
+    pcall(function()
+      require('leap').opts.case_sensitive = true
+      vim.keymap.set({ 'n', 'x', 'o' }, 's', '<Plug>(leap)')
+      vim.keymap.set({ 'n', 'x', 'o' }, 'S', '<Plug>(leap-from-window)')
+    end)
+
+    -- Android Plugin Configuration
+    pcall(function()
+      require('android').setup()
+      vim.keymap.set('n', '<leader>al', '<cmd>AndroidLogcat<cr>', { desc = '[A]ndroid [L]ogcat' })
+      vim.keymap.set('n', '<leader>ag', '<cmd>AndroidGradleTasks<cr>', { desc = '[A]ndroid [G]radle tasks' })
+    end)
 
     -- Neogit Configuration
     pcall(function()
@@ -145,6 +166,20 @@ vim.api.nvim_create_autocmd('VimEnter', {
       require('CopilotChat').setup()
       vim.keymap.set('n', '<leader>ai', ':CopilotChat<cr>', { desc = 'CopilotChat' })
       vim.keymap.set('v', '<leader>ai', ':CopilotChat<cr>', { desc = 'CopilotChat' })
+    end)
+
+    -- CodeCompanion Configuration
+    pcall(function()
+      require('codecompanion').setup {
+        strategies = {
+          chat = 'copilot',
+          inline = 'copilot',
+        },
+      }
+      vim.keymap.set('n', '<leader>cc', '<cmd>CodeCompanionChat<cr>', { desc = '[C]ode[C]ompanion Chat' })
+      vim.keymap.set('v', '<leader>cc', '<cmd>CodeCompanionChat<cr>', { desc = '[C]ode[C]ompanion Chat' })
+      vim.keymap.set('n', '<leader>ca', '<cmd>CodeCompanionActions<cr>', { desc = '[C]ode[C]ompanion [A]ctions' })
+      vim.keymap.set('v', '<leader>ca', '<cmd>CodeCompanionActions<cr>', { desc = '[C]ode[C]ompanion [A]ctions' })
     end)
   end,
   once = true,
