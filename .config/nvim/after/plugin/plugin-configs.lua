@@ -35,6 +35,10 @@ vim.api.nvim_create_autocmd('VimEnter', {
       require('gitsigns').setup()
       vim.keymap.set('n', '<leader>gp', ':Gitsigns preview_hunk <CR>', { desc = 'Preview git hunk' })
       vim.keymap.set('n', '<leader>gl', ':Gitsigns toggle_current_line_blame <CR>', { desc = 'Toggle git blame' })
+      vim.keymap.set('n', '<leader>gd', ':DiffviewOpen<CR>', { desc = 'Open diffview (all changes)' })
+      vim.keymap.set('n', '<leader>gD', function()
+        vim.cmd('DiffviewOpen HEAD -- ' .. vim.fn.expand('%'))
+      end, { desc = 'Diff current file' })
     end)
 
     -- Harpoon Configuration
