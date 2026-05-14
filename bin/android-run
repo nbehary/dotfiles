@@ -38,6 +38,7 @@ if [[ ! -x ./gradlew ]]; then
 fi
 log "Building and installing (./gradlew installFirebaseCtDebug)..."
 ./gradlew installFirebaseCtDebug
+# ./gradlew installDebug  # generic fallback if not using firebaseCt variant
 
 # --- find launcher activity ---
 log "Resolving launcher activity..."

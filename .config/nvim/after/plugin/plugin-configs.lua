@@ -147,6 +147,12 @@ vim.api.nvim_create_autocmd('VimEnter', {
       vim.keymap.set('n', '<leader>ag', '<cmd>AndroidGradleTasks<cr>', { desc = '[A]ndroid [G]radle tasks' })
     end)
 
+    -- Android Project View
+    pcall(function()
+      require('android_project_view').setup()
+      vim.keymap.set('n', '<leader>ap', '<cmd>AndroidProjectViewToggle<cr>', { desc = '[A]ndroid [P]roject view' })
+    end)
+
     -- Neogit Configuration
     pcall(function()
       require('neogit').setup {

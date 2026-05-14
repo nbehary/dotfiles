@@ -12,6 +12,12 @@ end
 
 dap.set_log_level 'DEBUG' -- view with :DapShowLog
 
+vim.fn.sign_define('DapBreakpoint', { text = '●', texthl = 'DiagnosticError', linehl = '', numhl = '' })
+vim.fn.sign_define('DapBreakpointCondition', { text = '◆', texthl = 'DiagnosticWarn', linehl = '', numhl = '' })
+vim.fn.sign_define('DapBreakpointRejected', { text = '○', texthl = 'DiagnosticError', linehl = '', numhl = '' })
+vim.fn.sign_define('DapStopped', { text = '▶', texthl = 'DiagnosticOk', linehl = 'CursorLine', numhl = '' })
+
+
 -- UI setup
 dapui.setup {
   icons = { expanded = '▾', collapsed = '▸', current_frame = '*' },
@@ -33,6 +39,19 @@ dapui.setup {
 dap.listeners.after.event_initialized['dapui_config'] = dapui.open
 dap.listeners.before.event_terminated['dapui_config'] = dapui.close
 dap.listeners.before.event_exited['dapui_config'] = dapui.close
+
+-- kotlin-debug-adapter fires duplicate stopped events per breakpoint hit.
+-- Debounce: ignore a second stopped event for the same thread within 500ms.
+local last_stopped = {}
+dap.listeners.before.event_stopped['android_dedup'] = function(session, body)
+  local key = tostring(body.threadId)
+  local now = vim.loop.now()
+  if last_stopped[key] and (now - last_stopped[key]) < 500 then
+    return false -- suppress duplicate
+  end
+  last_stopped[key] = now
+end
+
 
 -- kotlin-debug-adapter speaks DAP and translates to JDWP.
 -- Used for both Kotlin and Java since Android apps run on a JVM regardless of source language.
@@ -117,6 +136,30 @@ vim.api.nvim_create_user_command('AndroidRun', function()
   end)
 end, { desc = 'Build, install, and run Android app (no debugger)' })
 
+-- AndroidLogcat: display logcat for the current app
+vim.api.nvim_create_user_command('AndroidLogcat', function()
+  local script = vim.fn.expand '~/dotfiles/bin/android-logcat'
+  if vim.fn.executable(script) ~= 1 then
+    vim.notify('android-logcat not found or not executable: ' .. script, vim.log.levels.ERROR)
+    return
+  end
+
+  local root = vim.fs.dirname(vim.fs.find({ 'gradlew', 'settings.gradle', 'settings.gradle.kts' }, { upward = true })[1])
+  if not root then
+    vim.notify('AndroidLogcat: could not find project root (no gradlew found)', vim.log.levels.ERROR)
+    return
+  end
+
+  vim.system({ script }, { cwd = root, text = true }, function(obj)
+    vim.schedule(function()
+      if obj.code ~= 0 then
+        vim.notify('android-logcat failed:\n' .. (obj.stderr or '') .. (obj.stdout or ''), vim.log.levels.ERROR)
+      end
+    end)
+  end)
+end, { desc = 'Display logcat for current Android app' })
+
+
 -- Keymaps
 vim.keymap.set('n', '<F5>', dap.continue, { desc = 'Debug: Start/Continue' })
 vim.keymap.set('n', '<F1>', dap.step_into, { desc = 'Debug: Step Into' })
@@ -127,5 +170,6 @@ vim.keymap.set('n', '<leader>b', dap.toggle_breakpoint, { desc = 'Debug: Toggle 
 vim.keymap.set('n', '<leader>B', function()
   dap.set_breakpoint(vim.fn.input 'Breakpoint condition: ')
 end, { desc = 'Debug: Set Conditional Breakpoint' })
-vim.keymap.set('n', '<leader>da', '<cmd>AndroidDebug<CR>', { desc = 'Android Debug' })
+vim.keymap.set('n', '<F9>', '<cmd>AndroidDebug<CR>', { desc = 'Android Debug' })
 vim.keymap.set('n', '<leader>dr', '<cmd>AndroidRun<CR>', { desc = 'Android Run (no debugger)' })
+vim.keymap.set('n', '<leader>al', '<cmd>AndroidLogcat<CR>', { desc = 'Android Logcat' })
