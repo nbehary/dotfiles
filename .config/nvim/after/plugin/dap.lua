@@ -134,6 +134,29 @@ vim.api.nvim_create_user_command('AndroidRun', function()
   end)
 end, { desc = 'Build, install, and run Android app (no debugger)' })
 
+-- AndroidLogcat: display logcat for the current app
+vim.api.nvim_create_user_command('AndroidLogcat', function()
+  local script = vim.fn.expand '~/dotfiles/bin/android-logcat'
+  if vim.fn.executable(script) ~= 1 then
+    vim.notify('android-logcat not found or not executable: ' .. script, vim.log.levels.ERROR)
+    return
+  end
+
+  local root = vim.fs.dirname(vim.fs.find({ 'gradlew', 'settings.gradle', 'settings.gradle.kts' }, { upward = true })[1])
+  if not root then
+    vim.notify('AndroidLogcat: could not find project root (no gradlew found)', vim.log.levels.ERROR)
+    return
+  end
+
+  vim.system({ script }, { cwd = root, text = true }, function(obj)
+    vim.schedule(function()
+      if obj.code ~= 0 then
+        vim.notify('android-logcat failed:\n' .. (obj.stderr or '') .. (obj.stdout or ''), vim.log.levels.ERROR)
+      end
+    end)
+  end)
+end, { desc = 'Display logcat for current Android app' })
+
 -- Keymaps
 vim.keymap.set('n', '<F5>', dap.continue, { desc = 'Debug: Start/Continue' })
 vim.keymap.set('n', '<F1>', dap.step_into, { desc = 'Debug: Step Into' })
@@ -146,3 +169,4 @@ vim.keymap.set('n', '<leader>B', function()
 end, { desc = 'Debug: Set Conditional Breakpoint' })
 vim.keymap.set('n', '<F9>', '<cmd>AndroidDebug<CR>', { desc = 'Android Debug' })
 vim.keymap.set('n', '<leader>dr', '<cmd>AndroidRun<CR>', { desc = 'Android Run (no debugger)' })
+vim.keymap.set('n', '<leader>al', '<cmd>AndroidLogcat<CR>', { desc = 'Android Logcat' })
