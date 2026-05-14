@@ -138,18 +138,54 @@ export NVM_DIR="$HOME/.nvm"
 # bun
 export BUN_INSTALL="$HOME/.bun"
 export PATH="$BUN_INSTALL/bin:$PATH"
-#misc
-if [[ "$(uname -s)" == "Darwin" ]]; then
-  export JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home"
+# OS Detection
+OS_TYPE="$(uname -s)"
+
+# Java/JDK Setup
+if [[ "$OS_TYPE" == "Darwin" ]]; then
+  # macOS: Try Android Studio JBR first, then system Java
+  [[ -d "/Applications/Android Studio.app/Contents/jbr/Contents/Home" ]] && \
+    export JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home"
 elif [[ -d /usr/lib/jvm/java-21-openjdk ]]; then
   export JAVA_HOME="/usr/lib/jvm/java-21-openjdk"
+elif [[ -d /usr/lib/jvm/java-17-openjdk ]]; then
+  export JAVA_HOME="/usr/lib/jvm/java-17-openjdk"
 elif [[ -d /usr/lib/jvm/default ]]; then
   export JAVA_HOME="/usr/lib/jvm/default"
 fi
 [[ -n "$JAVA_HOME" && -d "$JAVA_HOME/bin" ]] && export PATH="$JAVA_HOME/bin:$PATH"
-source /opt/homebrew/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
-source /opt/homebrew/share/zsh-autosuggestions/zsh-autosuggestions.zsh
-eval "$(oh-my-posh init zsh --config 'https://raw.githubusercontent.com/JanDeDobbeleer/oh-my-posh/main/themes/nordtron.omp.json')"
-export PATH="/opt/homebrew/opt/rustup/bin:$PATH"
-export PATH="/Users/nbehary/.cargo/bin:$PATH"
-export PATH="/Users/nbehary/Library/Android/sdk/platform-tools:$PATH"
+
+# Android SDK Setup (cross-platform)
+if [[ -z "$ANDROID_HOME" ]]; then
+  # Try common Android SDK locations
+  if [[ "$OS_TYPE" == "Darwin" ]]; then
+    # macOS paths
+    [[ -d "$HOME/Library/Android/sdk" ]] && export ANDROID_HOME="$HOME/Library/Android/sdk"
+    [[ -d "/usr/local/share/android-sdk" ]] && export ANDROID_HOME="/usr/local/share/android-sdk"
+  else
+    # Linux and other Unix-like paths
+    [[ -d "$HOME/Android/Sdk" ]] && export ANDROID_HOME="$HOME/Android/Sdk"
+    [[ -d "$HOME/android-sdk" ]] && export ANDROID_HOME="$HOME/android-sdk"
+    [[ -d "/opt/android-sdk" ]] && export ANDROID_HOME="/opt/android-sdk"
+  fi
+fi
+[[ -d "$ANDROID_HOME/platform-tools" ]] && export PATH="$ANDROID_HOME/platform-tools:$PATH"
+[[ -d "$ANDROID_HOME/tools/bin" ]] && export PATH="$ANDROID_HOME/tools/bin:$PATH"
+
+# Homebrew setup (macOS only)
+if [[ "$OS_TYPE" == "Darwin" ]]; then
+  [[ -f /opt/homebrew/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh ]] && \
+    source /opt/homebrew/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
+  [[ -f /opt/homebrew/share/zsh-autosuggestions/zsh-autosuggestions.zsh ]] && \
+    source /opt/homebrew/share/zsh-autosuggestions/zsh-autosuggestions.zsh
+  [[ -d /opt/homebrew/opt/rustup/bin ]] && \
+    export PATH="/opt/homebrew/opt/rustup/bin:$PATH"
+fi
+
+# Cargo/Rust setup (cross-platform)
+[[ -d "$HOME/.cargo/bin" ]] && export PATH="$HOME/.cargo/bin:$PATH"
+
+# Oh-my-posh prompt (optional, fallback if unavailable)
+if command -v oh-my-posh &> /dev/null; then
+  eval "$(oh-my-posh init zsh --config 'https://raw.githubusercontent.com/JanDeDobbeleer/oh-my-posh/main/themes/nordtron.omp.json')"
+fi

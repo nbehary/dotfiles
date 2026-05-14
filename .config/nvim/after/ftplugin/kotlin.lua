@@ -78,17 +78,31 @@ if root_dir then
 
   -- android CLI integration
   if vim.fn.executable 'android' == 1 then
-    -- Find the debug APK: check conventional path first, then glob
+    -- Find the debug APK: check configured variant, then firebaseCt, then any debug APK
     local function find_debug_apk()
-      local conventional = root_dir .. '/app/build/outputs/apk/firebaseCt/debug/app-firebase-ct-debug.apk'
-      if vim.fn.filereadable(conventional) == 1 then
-        return conventional
+      local config = project_config.load_config(root_dir) or {}
+
+      -- Try user-configured variant first
+      if config.apk_variant then
+        local path = root_dir .. '/app/build/outputs/apk/' .. config.apk_variant .. '/debug/*.apk'
+        local found = vim.fn.glob(path, false, true)
+        if #found > 0 then return found[1] end
       end
-      local found = vim.fn.glob(root_dir .. '/**/apk/firebaseCt/debug/*.apk', false, true)
-      return found[1]
+
+      -- Try firebaseCt variant
+      local firebase_path = root_dir .. '/app/build/outputs/apk/firebaseCt/debug/*.apk'
+      local found = vim.fn.glob(firebase_path, false, true)
+      if #found > 0 then return found[1] end
+
+      -- Fall back to any debug APK
+      local generic_path = root_dir .. '/app/build/outputs/apk/*/debug/*.apk'
+      found = vim.fn.glob(generic_path, false, true)
+      if #found > 0 then return found[1] end
+
+      return nil
     end
 
-    local default_apk = root_dir .. '/app/build/outputs/apk/firebaseCt/debug/app-firebase-ct-debug.apk'
+    local default_apk = find_debug_apk() or root_dir .. '/app/build/outputs/apk/debug/app-debug.apk'
 
     -- Build with hardcoded task, then deploy and launch on connected device
     vim.keymap.set('n', '<leader>gr', function()
@@ -172,5 +186,18 @@ if root_dir then
       vim.g[init_key] = false
       vim.notify 'Install task config cleared. Re-discovery will happen on next Kotlin file open.'
     end, { desc = 'Reset saved Android install task' })
+
+    -- Command to set APK variant (e.g., firebaseCt, debug, release)
+    vim.api.nvim_create_user_command('AndroidSetVariant', function(opts)
+      local variant = opts.args:match '^%s*(.-)%s*$'
+      if variant == '' then
+        vim.notify('Usage: AndroidSetVariant <variant> (e.g., firebaseCt, debug)', vim.log.levels.WARN)
+        return
+      end
+      local config = project_config.load_config(root_dir) or {}
+      config.apk_variant = variant
+      project_config.save_config(root_dir, config)
+      vim.notify('APK variant set to: ' .. variant)
+    end, { nargs = 1, desc = 'Set Android APK variant (firebaseCt, debug, etc.)' })
   end
 end
