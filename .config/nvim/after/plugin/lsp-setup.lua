@@ -37,10 +37,37 @@ vim.api.nvim_create_autocmd('FileType', {
       return
     end
     
+    -- Resolve a JDK kotlin-language-server can actually run (it requires JDK <= 21,
+    -- and on some systems JAVA_HOME points at a macOS Android Studio path or the
+    -- distro's "default" JDK is too new). Try a few well-known locations.
+    local function find_jdk()
+      local candidates = {
+        os.getenv('KOTLIN_LSP_JDK'),
+        vim.fn.expand('~/android-studio/jbr'),
+        '/opt/android-studio/jbr',
+        '/usr/lib/jvm/java-21-openjdk',
+        '/usr/lib/jvm/java-17-openjdk',
+        '/opt/homebrew/opt/openjdk@21',
+        '/opt/homebrew/opt/openjdk@17',
+      }
+      for _, dir in ipairs(candidates) do
+        if dir and vim.fn.executable(dir .. '/bin/java') == 1 then
+          return dir
+        end
+      end
+      return nil
+    end
+    local kls_jdk = find_jdk()
+    local kls_env = nil
+    if kls_jdk then
+      kls_env = { JAVA_HOME = kls_jdk, PATH = kls_jdk .. '/bin:' .. (vim.env.PATH or '') }
+    end
+
     -- Start kotlin-language-server
     vim.lsp.start {
       name = 'kotlin-language-server',
       cmd = { 'kotlin-language-server' },
+      cmd_env = kls_env,
       bufnr = bufnr,
       capabilities = vim.lsp.protocol.make_client_capabilities(),
       settings = {

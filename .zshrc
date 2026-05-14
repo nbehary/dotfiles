@@ -139,8 +139,14 @@ export NVM_DIR="$HOME/.nvm"
 export BUN_INSTALL="$HOME/.bun"
 export PATH="$BUN_INSTALL/bin:$PATH"
 #misc
-export JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home"
-export PATH="$JAVA_HOME/bin:$PATH"
+if [[ "$(uname -s)" == "Darwin" ]]; then
+  export JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home"
+elif [[ -d /usr/lib/jvm/java-21-openjdk ]]; then
+  export JAVA_HOME="/usr/lib/jvm/java-21-openjdk"
+elif [[ -d /usr/lib/jvm/default ]]; then
+  export JAVA_HOME="/usr/lib/jvm/default"
+fi
+[[ -n "$JAVA_HOME" && -d "$JAVA_HOME/bin" ]] && export PATH="$JAVA_HOME/bin:$PATH"
 source /opt/homebrew/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
 source /opt/homebrew/share/zsh-autosuggestions/zsh-autosuggestions.zsh
 eval "$(oh-my-posh init zsh --config 'https://raw.githubusercontent.com/JanDeDobbeleer/oh-my-posh/main/themes/nordtron.omp.json')"

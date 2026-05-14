@@ -59,6 +59,23 @@ if root_dir then
     vim.cmd('!' .. gradlew .. ' clean')
   end, { buffer = 0, desc = '[G]radle [C]lean' })
 
+  vim.keymap.set('n', '<leader>gl', function()
+    local pkg = nil
+    local manifest = root_dir .. '/app/src/main/AndroidManifest.xml'
+    if vim.fn.filereadable(manifest) == 1 then
+      for _, line in ipairs(vim.fn.readfile(manifest)) do
+        pkg = line:match 'package="([^"]+)"'
+        if pkg then break end
+      end
+    end
+    vim.cmd 'split'
+    if pkg then
+      vim.cmd('terminal adb logcat --pid=$(adb shell pidof -s ' .. vim.fn.shellescape(pkg) .. ')')
+    else
+      vim.cmd 'terminal adb logcat'
+    end
+  end, { buffer = 0, desc = '[G]radle [L]ogcat (filtered to app)' })
+
   -- android CLI integration
   if vim.fn.executable 'android' == 1 then
     -- Find the debug APK: check conventional path first, then glob

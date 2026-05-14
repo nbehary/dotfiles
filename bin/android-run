@@ -1,0 +1,56 @@
+#!/usr/bin/env bash
+# Build, install, and launch an Android app (no debugger).
+#
+# Usage: android-run [LOCAL_PORT]
+#
+# Run from the project root (where gradlew lives).
+
+set -euo pipefail
+
+log() { printf '\033[1;34m==>\033[0m %s\n' "$*"; }
+err() { printf '\033[1;31mERROR:\033[0m %s\n' "$*" >&2; }
+
+# --- find applicationId ---
+PACKAGE=""
+for f in build.gradle.kts app/build.gradle.kts build.gradle app/build.gradle; do
+  [[ -f "$f" ]] || continue
+  PACKAGE=$(grep -m 1 -oE 'applicationId[[:space:]]*=?[[:space:]]*"[^"]+"' "$f" \
+            | grep -oE '"[^"]+"' | tr -d '"' || true)
+  [[ -n "$PACKAGE" ]] && break
+done
+
+if [[ -z "$PACKAGE" ]]; then
+  err "Could not find applicationId in any build.gradle(.kts)"
+  exit 1
+fi
+log "Package: $PACKAGE"
+
+# --- check device ---
+if ! adb get-state >/dev/null 2>&1; then
+  err "No device/emulator connected. Run: adb devices"
+  exit 1
+fi
+
+# --- build + install ---
+if [[ ! -x ./gradlew ]]; then
+  err "./gradlew not found or not executable. Run from project root."
+  exit 1
+fi
+log "Building and installing (./gradlew installDebug)..."
+./gradlew installDebug
+
+# --- find launcher activity ---
+log "Resolving launcher activity..."
+ACTIVITY=$(adb shell cmd package resolve-activity --brief \
+            -c android.intent.category.LAUNCHER "$PACKAGE" \
+            | tail -n 1 | tr -d '\r')
+
+if [[ -z "$ACTIVITY" || "$ACTIVITY" == "No activity found" ]]; then
+  err "Could not resolve launcher activity for $PACKAGE"
+  exit 1
+fi
+log "Activity: $ACTIVITY"
+
+# --- launch ---
+adb shell am start -n "$ACTIVITY" >/dev/null
+log "Launched $PACKAGE"
