@@ -61,13 +61,31 @@ if root_dir then
 
   vim.keymap.set('n', '<leader>gl', function()
     local pkg = nil
-    local manifest = root_dir .. '/app/src/main/AndroidManifest.xml'
-    if vim.fn.filereadable(manifest) == 1 then
-      for _, line in ipairs(vim.fn.readfile(manifest)) do
-        pkg = line:match 'package="([^"]+)"'
+    
+    -- Try to read package from app build.gradle (namespace or applicationId)
+    local build_gradle = root_dir .. '/app/build.gradle'
+    if vim.fn.filereadable(build_gradle) == 1 then
+      for _, line in ipairs(vim.fn.readfile(build_gradle)) do
+        -- Match namespace first (preferred)
+        pkg = line:match "namespace%s*[=:]%s*['\"]([^'\"]+)['\"]"
+        if pkg then break end
+        -- Then try applicationId (fallback)
+        pkg = line:match 'applicationId%s*["\']([^"\']+)["\']'
         if pkg then break end
       end
     end
+    
+    -- Fallback: check AndroidManifest.xml for package attribute
+    if not pkg then
+      local manifest = root_dir .. '/app/src/main/AndroidManifest.xml'
+      if vim.fn.filereadable(manifest) == 1 then
+        for _, line in ipairs(vim.fn.readfile(manifest)) do
+          pkg = line:match 'package="([^"]+)"'
+          if pkg then break end
+        end
+      end
+    end
+    
     vim.cmd 'split'
     if pkg then
       vim.cmd('terminal adb logcat --pid=$(adb shell pidof -s ' .. vim.fn.shellescape(pkg) .. ')')
