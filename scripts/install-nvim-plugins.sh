@@ -16,13 +16,12 @@ install_plugin() {
   local dir=$2
   local url=${3:-"https://github.com/$repo.git"}
   
-  if [ -d "$dir" ]; then
+  if git -C "$dir" rev-parse --git-dir &>/dev/null; then
     echo "Updating $(basename $dir)..."
-    cd "$dir"
-    git pull --quiet
-    cd - > /dev/null
+    git -C "$dir" pull --quiet
   else
     echo "Installing $(basename $dir)..."
+    rm -rf "$dir"
     git clone --quiet "$url" "$dir"
   fi
 }
