@@ -1,0 +1,43 @@
+# Mac-only tools
+{{ if ne .chezmoi.os "darwin" }}
+dot_config/yabai
+dot_config/skhd
+dot_config/sketchybar
+dot_config/yazi
+dot_config/borders
+{{ end }}
+
+# Linux-only tools
+{{ if ne .chezmoi.os "linux" }}
+dot_config/alacritty
+dot_config/dk
+dot_config/rofi
+dot_config/zellij
+dot_config/ghostty
+dot_wezterm.lua
+{{ end }}
+
+# picom: X11 compositor, desktop only (not needed under Hyprland/Wayland)
+{{ if ne .machine "desktop" }}
+dot_config/picom
+{{ end }}
+
+# Hyprland: laptop only
+{{ if ne .machine "laptop" }}
+dot_config/hypr
+{{ end }}
+
+# Android dev tooling
+{{ if not .androidDev }}
+bin
+dot_config/nvim/lua/android
+dot_config/nvim/after/plugin/android_project_view.lua
+dot_config/nvim/lua/jdtls_start.lua
+dot_config/nvim/kotlinDSLClassPathFinder.gradle
+dot_config/nvim/projectClassPathFinder.gradle
+{{ end }}
+
+# Docs and migration artifacts — not applied to home
+CHEZMOI_MIGRATION_PLAN.md
+CLAUDE.md
+docs

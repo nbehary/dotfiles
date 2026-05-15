@@ -1,0 +1,6 @@
+{{- $machine := promptStringOnce . "machine" "Machine type (work-mac / desktop / laptop)" -}}
+{{- $androidDev := promptBoolOnce . "androidDev" "Enable Android dev tooling?" -}}
+
+[data]
+  machine = {{ $machine | quote }}
+  androidDev = {{ $androidDev }}
