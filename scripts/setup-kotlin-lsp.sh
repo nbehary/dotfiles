@@ -390,9 +390,24 @@ build_from_source() {
 }
 
 # Locate the lib directory for the currently active kotlin-language-server binary.
+# Resolves symlinks before computing the path so Homebrew installs (where the binary
+# in /opt/homebrew/bin is a symlink into the Cellar) resolve to the right place.
 _kls_lib_dir() {
+  local bin_path
+  bin_path="$(command -v kotlin-language-server)"
+
+  # Walk symlink chain without relying on readlink -f (not portable on macOS)
+  while [ -L "$bin_path" ]; do
+    local target
+    target="$(readlink "$bin_path")"
+    case "$target" in
+      /*) bin_path="$target" ;;
+      *)  bin_path="$(dirname "$bin_path")/$target" ;;
+    esac
+  done
+
   local base_dir
-  base_dir="$(dirname "$(command -v kotlin-language-server)")/.."
+  base_dir="$(dirname "$bin_path")/.."
   if [ -d "${base_dir}/lib" ]; then
     echo "${base_dir}/lib"
   elif [ -d "${base_dir}/libexec/lib" ]; then
