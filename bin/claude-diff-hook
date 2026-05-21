@@ -1,0 +1,202 @@
+#!/usr/bin/env python3
+"""
+Claude Code PreToolUse hook — shows proposed file changes in Neovim before
+applying them. Blocks the tool call until the user accepts or rejects.
+
+Exit codes:
+  0 = allow the change
+  2 = block the change (user rejected)
+"""
+
+import difflib
+import glob
+import json
+import os
+import select
+import stat
+import subprocess
+import sys
+import tempfile
+import threading
+from pathlib import Path
+
+
+# ── Socket discovery ──────────────────────────────────────────────────────────
+
+def find_nvim_socket():
+    candidates = []
+
+    # 1. Running inside a Neovim terminal buffer
+    s = os.environ.get('NVIM', '')
+    if s:
+        candidates.insert(0, s)
+
+    # 2. Explicit listen address
+    s = os.environ.get('NVIM_LISTEN_ADDRESS', '')
+    if s:
+        candidates.append(s)
+
+    # 3. Well-known fixed socket (set in init.lua)
+    candidates.append('/tmp/nvim')
+
+    # 4. Auto-generated sockets under /tmp
+    candidates.extend(sorted(glob.glob('/tmp/nvim-*.sock'), reverse=True))
+
+    # 5. XDG_RUNTIME_DIR
+    runtime = os.environ.get('XDG_RUNTIME_DIR', '')
+    if runtime:
+        candidates.extend(sorted(glob.glob(f'{runtime}/nvim*'), reverse=True))
+
+    for path in candidates:
+        try:
+            if stat.S_ISSOCK(os.stat(path).st_mode):
+                return path
+        except OSError:
+            pass
+    return None
+
+
+# ── Diff generation ───────────────────────────────────────────────────────────
+
+def _apply_edit(original: str, old_s: str, new_s: str, replace_all: bool) -> str:
+    if replace_all:
+        return original.replace(old_s, new_s)
+    return original.replace(old_s, new_s, 1)
+
+
+def generate_diff(tool_name: str, tool_input: dict) -> str | None:
+    fp = tool_input.get('file_path', '')
+    if not fp:
+        return None
+
+    try:
+        original = Path(fp).read_text(errors='replace')
+    except (FileNotFoundError, PermissionError):
+        original = ''
+
+    if tool_name == 'Edit':
+        modified = _apply_edit(
+            original,
+            tool_input.get('old_string', ''),
+            tool_input.get('new_string', ''),
+            bool(tool_input.get('replace_all', False)),
+        )
+    elif tool_name == 'Write':
+        modified = tool_input.get('content', '')
+    elif tool_name == 'MultiEdit':
+        modified = original
+        for edit in tool_input.get('edits', []):
+            modified = _apply_edit(
+                modified,
+                edit.get('old_string', ''),
+                edit.get('new_string', ''),
+                bool(edit.get('replace_all', False)),
+            )
+    else:
+        return None
+
+    if original == modified:
+        return None
+
+    diff_lines = list(difflib.unified_diff(
+        original.splitlines(keepends=True),
+        modified.splitlines(keepends=True),
+        fromfile=f'a/{fp}',
+        tofile=f'b/{fp}',
+    ))
+    return ''.join(diff_lines) if diff_lines else None
+
+
+# ── Main ──────────────────────────────────────────────────────────────────────
+
+def main() -> None:
+    try:
+        data = json.load(sys.stdin)
+    except Exception:
+        sys.exit(0)
+
+    tool_name  = data.get('tool_name', '')
+    tool_input = data.get('tool_input', {})
+
+    if tool_name not in ('Edit', 'Write', 'MultiEdit'):
+        sys.exit(0)
+
+    diff = generate_diff(tool_name, tool_input)
+    if not diff:
+        sys.exit(0)
+
+    sock = find_nvim_socket()
+    if not sock:
+        sys.exit(0)  # No Neovim running — pass through silently
+
+    # Locate the display script alongside this file, then fall back to PATH
+    script_dir  = Path(__file__).resolve().parent
+    display_bin = script_dir / 'claude-diff-display'
+    if not display_bin.exists():
+        display_bin = Path(os.environ.get('HOME', '~')).expanduser() / '.local/bin/claude-diff-display'
+    if not display_bin.exists():
+        sys.exit(0)  # Display script not found — pass through
+
+    # Temp files: diff content + response FIFO + bootstrap Lua
+    diff_fd, diff_path = tempfile.mkstemp(suffix='.diff', prefix='cdr_')
+    pipe_path = tempfile.mktemp(suffix='.pipe', prefix='cdr_')
+    lua_path  = tempfile.mktemp(suffix='.lua',  prefix='cdr_')
+
+    response = 'reject'
+    try:
+        with os.fdopen(diff_fd, 'w') as fh:
+            fh.write(diff)
+
+        os.mkfifo(pipe_path, 0o600)
+
+        # Bootstrap Lua: use json.dumps so paths are properly escaped
+        bootstrap = (
+            f"require('claude_review').show("
+            f"{json.dumps(diff_path)}, "
+            f"{json.dumps(pipe_path)}, "
+            f"{json.dumps(str(display_bin))}"
+            f")\n"
+        )
+        Path(lua_path).write_text(bootstrap)
+
+        # Tell the running Neovim to source the bootstrap (mode-independent)
+        subprocess.run(
+            ['nvim', '--server', sock, '--remote-expr',
+             f"execute('luafile {lua_path}')"],
+            capture_output=True, timeout=5,
+        )
+
+        # Block until the display script writes a response, with 120 s timeout
+        result: dict[str, str] = {}
+        event = threading.Event()
+
+        def _reader():
+            try:
+                with open(pipe_path, 'r') as f:
+                    result['v'] = f.read().strip()
+            except Exception:
+                result['v'] = 'reject'
+            event.set()
+
+        t = threading.Thread(target=_reader, daemon=True)
+        t.start()
+        event.wait(timeout=120)
+
+        response = result.get('v', 'reject')
+
+    finally:
+        for p in (diff_path, pipe_path, lua_path):
+            try:
+                Path(p).unlink(missing_ok=True)
+            except Exception:
+                pass
+
+    if response == 'accept':
+        sys.exit(0)
+    else:
+        print('Change rejected by user in Neovim.', file=sys.stderr)
+        sys.exit(2)
+
+
+if __name__ == '__main__':
+    main()
