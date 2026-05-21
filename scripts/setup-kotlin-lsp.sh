@@ -389,6 +389,124 @@ build_from_source() {
   [ -n "$jar_version" ] && print_success "Bundled kotlin-stdlib version: ${jar_version}"
 }
 
+# Locate the lib directory for the currently active kotlin-language-server binary.
+_kls_lib_dir() {
+  local base_dir
+  base_dir="$(dirname "$(command -v kotlin-language-server)")/.."
+  if [ -d "${base_dir}/lib" ]; then
+    echo "${base_dir}/lib"
+  elif [ -d "${base_dir}/libexec/lib" ]; then
+    echo "${base_dir}/libexec/lib"
+  fi
+}
+
+# Overwrite the Kotlin compiler JARs inside the existing installation with newer
+# versions downloaded from Maven Central. The filenames keep the old version number
+# so the startup script's hardcoded classpath continues to work. Old JARs are backed
+# up as *.bak so --restore-jars can undo this.
+patch_jars() {
+  print_header "Patching Kotlin Compiler JARs → ${KOTLIN_COMPILER_VERSION}"
+
+  if ! command -v kotlin-language-server &>/dev/null; then
+    print_error "kotlin-language-server not found in PATH"
+    return 1
+  fi
+  if ! command -v curl &>/dev/null; then
+    print_error "curl not found — required to download JARs"
+    return 1
+  fi
+
+  local lib_dir
+  lib_dir="$(_kls_lib_dir)"
+  if [ -z "$lib_dir" ]; then
+    print_error "Could not find lib directory for kotlin-language-server"
+    return 1
+  fi
+  print_info "Using lib dir: ${lib_dir}"
+
+  local current_version
+  current_version=$(find "$lib_dir" -maxdepth 1 -name "kotlin-stdlib-*.jar" 2>/dev/null \
+    | sed 's/.*kotlin-stdlib-\(.*\)\.jar/\1/' | head -1 || true)
+  if [ -z "$current_version" ]; then
+    print_error "Could not detect current Kotlin version — no kotlin-stdlib-*.jar found"
+    return 1
+  fi
+  print_info "Current Kotlin version: ${current_version}"
+
+  if [ "$current_version" = "$KOTLIN_COMPILER_VERSION" ]; then
+    print_info "Already at ${KOTLIN_COMPILER_VERSION} — nothing to do"
+    return 0
+  fi
+
+  local maven_base="https://repo1.maven.org/maven2/org/jetbrains/kotlin"
+
+  # Download all replacements to tmp files first; only patch if every download succeeds.
+  local jars=()
+  local tmpfiles=()
+  local failed=0
+
+  while IFS= read -r jar_path; do
+    jars+=("$jar_path")
+    local jar_file artifact url tmpfile
+    jar_file="$(basename "$jar_path")"
+    artifact="${jar_file%-${current_version}.jar}"
+    url="${maven_base}/${artifact}/${KOTLIN_COMPILER_VERSION}/${artifact}-${KOTLIN_COMPILER_VERSION}.jar"
+    tmpfile="${jar_path}.new"
+    tmpfiles+=("$tmpfile")
+    print_info "Downloading ${artifact}-${KOTLIN_COMPILER_VERSION}.jar..."
+    if ! curl -fsSL "$url" -o "$tmpfile"; then
+      print_error "Download failed: ${url}"
+      failed=$((failed + 1))
+    fi
+  done < <(find "$lib_dir" -maxdepth 1 -name "kotlin-*-${current_version}.jar" 2>/dev/null | sort)
+
+  if [ $failed -gt 0 ]; then
+    print_error "${failed} download(s) failed — aborting, no JARs have been modified"
+    rm -f "${tmpfiles[@]}"
+    return 1
+  fi
+
+  # All downloads succeeded — swap them in.
+  for jar_path in "${jars[@]}"; do
+    cp "$jar_path" "${jar_path}.bak"
+    mv "${jar_path}.new" "$jar_path"
+    print_success "Patched $(basename "$jar_path")"
+  done
+
+  print_success "Done — ${#jars[@]} JAR(s) patched. Run --restore-jars to undo."
+}
+
+# Restore JARs previously backed up by --patch-jars.
+restore_jars() {
+  print_header "Restoring Kotlin Compiler JARs from Backup"
+
+  if ! command -v kotlin-language-server &>/dev/null; then
+    print_error "kotlin-language-server not found in PATH"
+    return 1
+  fi
+
+  local lib_dir
+  lib_dir="$(_kls_lib_dir)"
+  if [ -z "$lib_dir" ]; then
+    print_error "Could not find lib directory for kotlin-language-server"
+    return 1
+  fi
+
+  local restored=0
+  while IFS= read -r bak_path; do
+    local original="${bak_path%.bak}"
+    mv "$bak_path" "$original"
+    print_success "Restored $(basename "$original")"
+    restored=$((restored + 1))
+  done < <(find "$lib_dir" -maxdepth 1 -name "kotlin-*.jar.bak" 2>/dev/null | sort)
+
+  if [ $restored -eq 0 ]; then
+    print_info "No .bak files found — nothing to restore"
+  else
+    print_success "Restored ${restored} JAR(s)"
+  fi
+}
+
 # Main flow
 main() {
   local mode="${1:---check}"
@@ -402,6 +520,12 @@ main() {
       ;;
     --build-from-source)
       build_from_source
+      ;;
+    --patch-jars)
+      patch_jars
+      ;;
+    --restore-jars)
+      restore_jars
       ;;
     --configure)
       check_neovim_config && configure_lsp_setup
@@ -426,6 +550,11 @@ Options:
                         gradle/libs.versions.toml to use KOTLIN_COMPILER_VERSION (default:
                         2.3.0), builds, and symlinks the binary to ~/.local/bin.
                         Override the version: KOTLIN_COMPILER_VERSION=2.x.y ./setup-kotlin-lsp.sh --build-from-source
+  --patch-jars          Quick-and-dirty: download replacement Kotlin compiler JARs from
+                        Maven Central and overwrite them inside the existing installation.
+                        Does not require a build toolchain. Backs up originals as *.bak.
+                        Override the version: KOTLIN_COMPILER_VERSION=2.x.y ./setup-kotlin-lsp.sh --patch-jars
+  --restore-jars        Undo --patch-jars by restoring the *.bak files.
   --configure           Configure Neovim LSP setup file
   --full                Run all steps: check, install, configure, and verify
   --verify              Verify the setup is correct
@@ -441,12 +570,19 @@ Examples:
   # Build with a specific Kotlin compiler version
   KOTLIN_COMPILER_VERSION=2.3.0 ./setup-kotlin-lsp.sh --build-from-source
 
+  # Patch JARs in-place (no build toolchain needed)
+  KOTLIN_COMPILER_VERSION=2.3.0 ./setup-kotlin-lsp.sh --patch-jars
+
+  # Undo the patch
+  ./setup-kotlin-lsp.sh --restore-jars
+
   # Reconfigure after changes
   ./setup-kotlin-lsp.sh --configure
 
 Notes:
   - --install requires Homebrew; --build-from-source requires git and JDK 11+
   - --build-from-source installs to ~/.local/bin — ensure that's in PATH before Homebrew
+  - --patch-jars overwrites JARs in the existing install; use --restore-jars to undo
   - Requires existing Neovim configuration
   - Creates after/plugin and after/ftplugin directories if needed
   - Overwrites existing lsp-setup.lua configuration
