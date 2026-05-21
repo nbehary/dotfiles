@@ -6,23 +6,23 @@ if not ok then
   return
 end
 
+-- Configure deltaview safely and add keymap to open changes from last commit for current file
 if type(deltaview.setup) == 'function' then
   deltaview.setup({
-    -- sensible defaults; tweak as desired
     width = 60,
     side = 'right',
     border = 'rounded',
-    -- mappings here are examples — adjust according to the plugin's API
-    mappings = {
-      open = '<leader>do',
-      close = 'q',
-      next = 'j',
-      prev = 'k',
-    },
+    -- Keep default keyconfig; user mapping below handles the requested quick action
   })
 end
 
--- Example keymap: only set if plugin exposes an "open" function
-if type(deltaview.open) == 'function' then
-  vim.keymap.set('n', '<leader>dv', deltaview.open, { noremap = true, silent = true, desc = 'Open Deltaview' })
-end
+-- Map <leader>dc to open Delta for the current file against HEAD~1 (last commit)
+vim.keymap.set('n', '<leader>dc', function()
+  local path = vim.fn.expand('%:p')
+  if path == nil or path == '' then
+    path = vim.fn.getcwd()
+  end
+  -- Use :Delta <path> <context> <ref> to open file-specific diff. Context 3 chosen as sensible default.
+  local cmd = string.format("Delta %s %d %s", vim.fn.fnameescape(path), 3, 'HEAD~1')
+  vim.cmd(cmd)
+end, { noremap = true, silent = true, desc = 'Delta: show changes from last commit for this file' })
