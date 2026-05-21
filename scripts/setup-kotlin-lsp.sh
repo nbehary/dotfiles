@@ -1,7 +1,7 @@
 #!/bin/bash
 # Kotlin LSP Setup Skill
 # Configures Neovim with proper Kotlin Language Server support for Gradle projects
-# Usage: ./setup-kotlin-lsp.sh [--check] [--install] [--configure]
+# Usage: ./setup-kotlin-lsp.sh [--check] [--install] [--build-from-source] [--configure]
 
 set -e
 
@@ -16,6 +16,12 @@ NC='\033[0m' # No Color
 NVIM_CONFIG_DIR="${HOME}/.config/nvim"
 LSP_SETUP_FILE="${NVIM_CONFIG_DIR}/after/plugin/lsp-setup.lua"
 KOTLIN_FTPLUGIN="${NVIM_CONFIG_DIR}/after/ftplugin/kotlin.lua"
+
+# Build-from-source configuration
+KLS_REPO="https://github.com/fwcd/kotlin-language-server"
+KLS_SRC_DIR="${HOME}/.local/share/kotlin-language-server-src"
+KLS_INSTALL_DIR="${HOME}/.local/bin"
+KOTLIN_COMPILER_VERSION="${KOTLIN_COMPILER_VERSION:-2.3.0}"
 
 # Functions
 print_header() {
@@ -297,6 +303,80 @@ verify_setup() {
   return $status
 }
 
+# Build kotlin-language-server from source with a patched Kotlin compiler version.
+# Clones/updates the repo, patches gradle/libs.versions.toml, builds, then symlinks
+# the binary into ~/.local/bin so it takes precedence over any Homebrew install.
+build_from_source() {
+  print_header "Building Kotlin Language Server from Source (Kotlin ${KOTLIN_COMPILER_VERSION})"
+
+  # Prerequisites
+  if ! command -v git &>/dev/null; then
+    print_error "git not found — required to clone the KLS repo"
+    return 1
+  fi
+  if ! command -v java &>/dev/null; then
+    print_error "java not found — JDK 11+ is required to build KLS"
+    return 1
+  fi
+
+  mkdir -p "$KLS_INSTALL_DIR"
+
+  # Clone or pull latest
+  if [ -d "${KLS_SRC_DIR}/.git" ]; then
+    print_info "Updating existing source at ${KLS_SRC_DIR}..."
+    git -C "$KLS_SRC_DIR" fetch origin
+    git -C "$KLS_SRC_DIR" checkout main
+    git -C "$KLS_SRC_DIR" pull --ff-only origin main
+  else
+    print_info "Cloning ${KLS_REPO} to ${KLS_SRC_DIR}..."
+    mkdir -p "$(dirname "$KLS_SRC_DIR")"
+    git clone "$KLS_REPO" "$KLS_SRC_DIR"
+  fi
+
+  # Patch kotlinVersion in the version catalog
+  local version_catalog="${KLS_SRC_DIR}/gradle/libs.versions.toml"
+  local current_version
+  current_version=$(grep '^kotlinVersion' "$version_catalog" | sed 's/kotlinVersion = "\(.*\)"/\1/')
+
+  if [ "$current_version" = "$KOTLIN_COMPILER_VERSION" ]; then
+    print_info "kotlinVersion is already ${KOTLIN_COMPILER_VERSION} — skipping patch"
+  else
+    print_info "Patching kotlinVersion: ${current_version} → ${KOTLIN_COMPILER_VERSION}"
+    sed -i.bak "s/^kotlinVersion = \".*\"/kotlinVersion = \"${KOTLIN_COMPILER_VERSION}\"/" "$version_catalog"
+    rm -f "${version_catalog}.bak"
+  fi
+
+  # Build
+  print_info "Building KLS (this may take a few minutes on first run)..."
+  (
+    cd "$KLS_SRC_DIR"
+    ./gradlew :server:installDist --no-daemon
+  ) || {
+    print_error "Gradle build failed — check output above for details"
+    return 1
+  }
+
+  # Symlink into install dir
+  local built_bin="${KLS_SRC_DIR}/server/build/install/server/bin/kotlin-language-server"
+  if [ ! -f "$built_bin" ]; then
+    print_error "Expected build output not found: ${built_bin}"
+    return 1
+  fi
+
+  ln -sf "$built_bin" "${KLS_INSTALL_DIR}/kotlin-language-server"
+  print_success "Symlinked to ${KLS_INSTALL_DIR}/kotlin-language-server"
+
+  if ! echo "$PATH" | tr ':' '\n' | grep -qx "$KLS_INSTALL_DIR"; then
+    print_info "NOTE: ${KLS_INSTALL_DIR} is not in your PATH — add it (before Homebrew) in your shell rc."
+  fi
+
+  # Confirm the version embedded in the built JARs
+  local jar_version
+  jar_version=$(find "${KLS_SRC_DIR}/server/build/install/server/lib" -name "kotlin-stdlib-*.jar" 2>/dev/null \
+    | sed 's/.*kotlin-stdlib-\(.*\)\.jar/\1/' | head -1 || true)
+  [ -n "$jar_version" ] && print_success "Bundled kotlin-stdlib version: ${jar_version}"
+}
+
 # Main flow
 main() {
   local mode="${1:---check}"
@@ -307,6 +387,9 @@ main() {
       ;;
     --install)
       check_neovim_config && install_kotlin_lsp
+      ;;
+    --build-from-source)
+      build_from_source
       ;;
     --configure)
       check_neovim_config && configure_lsp_setup
@@ -324,12 +407,17 @@ Kotlin LSP Setup Skill
 Usage: ./setup-kotlin-lsp.sh [OPTION]
 
 Options:
-  --check       Check if Kotlin LSP is installed and Neovim is configured (default)
-  --install     Install kotlin-language-server via Homebrew
-  --configure   Configure Neovim LSP setup file
-  --full        Run all steps: check, install, configure, and verify
-  --verify      Verify the setup is correct
-  --help        Show this help message
+  --check               Check if Kotlin LSP is installed and Neovim is configured (default)
+  --install             Install kotlin-language-server via Homebrew
+  --build-from-source   Build KLS from source with a patched Kotlin compiler version.
+                        Clones https://github.com/fwcd/kotlin-language-server, patches
+                        gradle/libs.versions.toml to use KOTLIN_COMPILER_VERSION (default:
+                        2.3.0), builds, and symlinks the binary to ~/.local/bin.
+                        Override the version: KOTLIN_COMPILER_VERSION=2.x.y ./setup-kotlin-lsp.sh --build-from-source
+  --configure           Configure Neovim LSP setup file
+  --full                Run all steps: check, install, configure, and verify
+  --verify              Verify the setup is correct
+  --help                Show this help message
 
 Examples:
   # Check current state
@@ -338,11 +426,15 @@ Examples:
   # Full setup from scratch
   ./setup-kotlin-lsp.sh --full
 
+  # Build with a specific Kotlin compiler version
+  KOTLIN_COMPILER_VERSION=2.3.0 ./setup-kotlin-lsp.sh --build-from-source
+
   # Reconfigure after changes
   ./setup-kotlin-lsp.sh --configure
 
 Notes:
-  - Requires Homebrew for installation
+  - --install requires Homebrew; --build-from-source requires git and JDK 11+
+  - --build-from-source installs to ~/.local/bin — ensure that's in PATH before Homebrew
   - Requires existing Neovim configuration
   - Creates after/plugin and after/ftplugin directories if needed
   - Overwrites existing lsp-setup.lua configuration
