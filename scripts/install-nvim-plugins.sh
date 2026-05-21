@@ -72,6 +72,10 @@ install_plugin "mfussenegger/nvim-dap" "$START_DIR/nvim-dap"
 install_plugin "rcarriga/nvim-dap-ui" "$START_DIR/nvim-dap-ui"
 install_plugin "nvim-neotest/nvim-nio" "$START_DIR/nvim-nio"
 
+# AI chat plugins
+install_plugin "CopilotC-Nvim/CopilotChat.nvim" "$START_DIR/CopilotChat.nvim"
+install_plugin "olimorris/codecompanion.nvim" "$START_DIR/codecompanion.nvim"
+
 # Optional plugins (loaded with packadd)
 echo "Installing optional plugins..."
 install_plugin "kdheepak/lazygit.nvim" "$OPT_DIR/lazygit.nvim"

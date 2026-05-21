@@ -22,7 +22,11 @@ vim.opt_local.softtabstop = 4
 vim.opt_local.expandtab = true
 
 -- Gradle build/run keymaps (only set when in a Gradle project)
-local root_dir = vim.fs.dirname(vim.fs.find({ 'gradlew' }, { upward = true })[1])
+local _root = vim.fs.find({ 'gradlew' }, { upward = true })
+local root_dir = nil
+if _root and _root[1] then
+  root_dir = vim.fs.dirname(_root[1])
+end
 if root_dir then
   local gradlew = root_dir .. '/gradlew'
   local project_config = require 'android.project_config'

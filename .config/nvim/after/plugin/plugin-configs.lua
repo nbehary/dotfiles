@@ -176,12 +176,7 @@ vim.api.nvim_create_autocmd('VimEnter', {
 
     -- CodeCompanion Configuration
     pcall(function()
-      require('codecompanion').setup {
-        strategies = {
-          chat = 'copilot',
-          inline = 'copilot',
-        },
-      }
+      require('codecompanion').setup()
       vim.keymap.set('n', '<leader>cc', '<cmd>CodeCompanionChat<cr>', { desc = '[C]ode[C]ompanion Chat' })
       vim.keymap.set('v', '<leader>cc', '<cmd>CodeCompanionChat<cr>', { desc = '[C]ode[C]ompanion Chat' })
       vim.keymap.set('n', '<leader>ca', '<cmd>CodeCompanionActions<cr>', { desc = '[C]ode[C]ompanion [A]ctions' })

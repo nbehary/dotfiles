@@ -33,6 +33,10 @@ vim.keymap.set('n', '<leader>pv', ':NvimTreeToggle<cr>')
 -- Neogit
 vim.keymap.set('n', '<leader>n', ':Neogit<cr>', { desc = 'Neogit status' })
 
+-- Diffview
+vim.keymap.set('n', '<leader>gd', ':DiffviewOpen HEAD~1..HEAD<cr>', { desc = 'Diffview (latest commit)' })
+vim.keymap.set('n', '<leader>gx', ':DiffviewClose<cr>', { desc = 'Close Diffview' })
+
 -- [[ Gradle.nvim keybindings ]]
 vim.keymap.set({ 'n', 'v' }, '<leader>Gg', '<cmd>Gradle<cr>', { desc = 'Gradle Projects' })
 vim.keymap.set({ 'n', 'v' }, '<leader>Gf', '<cmd>GradleFavorites<cr>', { desc = 'Gradle Favorite Commands' })
@@ -119,9 +123,12 @@ vim.api.nvim_create_autocmd('ColorScheme', {
 })
 
 -- [[ Load colorscheme ]]
--- Load plugins first (via vim.pack automatic loading), then set colorscheme
--- This ensures colorscheme plugin is available before we try to use it
-vim.cmd.colorscheme 'catppuccin-mocha'
-vim.cmd.hi 'Comment gui=none'
+-- Ensure optional colorscheme plugin is loaded before applying
+pcall(vim.cmd, 'packadd catppuccin')
+local ok, err = pcall(vim.cmd, 'colorscheme catppuccin-mocha')
+if not ok then
+  vim.notify('Cannot load colorscheme catppuccin-mocha: ' .. tostring(err), vim.log.levels.WARN)
+end
+pcall(vim.cmd, "hi Comment gui=none")
 
 -- vim: ts=2 sts=2 sw=2 et

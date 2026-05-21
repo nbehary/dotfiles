@@ -4,22 +4,35 @@
 vim.api.nvim_create_autocmd('VimEnter', {
   group = vim.api.nvim_create_augroup('lsp-setup-defer', { clear = true }),
   callback = function()
-    -- Set up Mason first
-    require('mason').setup()
+    -- Prefer to fail gracefully if mason (or other plugins) are not installed
+    local mason_ok, mason = pcall(require, 'mason')
+    if not mason_ok then
+      vim.notify('mason not available; LSP setup deferred', vim.log.levels.WARN)
+      return
+    end
+    mason.setup()
 
     local capabilities = vim.lsp.protocol.make_client_capabilities()
-    capabilities = vim.tbl_deep_extend('force', capabilities, require('cmp_nvim_lsp').default_capabilities())
+    local cmp_ok, cmp_nvim_lsp = pcall(require, 'cmp_nvim_lsp')
+    if cmp_ok and cmp_nvim_lsp and cmp_nvim_lsp.default_capabilities then
+      capabilities = vim.tbl_deep_extend('force', capabilities, cmp_nvim_lsp.default_capabilities())
+    end
 
-    require('mason-tool-installer').setup {
-      ensure_installed = {
-        'ktlint',
-        'jdtls',
-        'stylua',
-        'java-debug-adapter',
-        'kotlin-debug-adapter',
-      },
-      skip_update = false,
-    }
+    local mti_ok, mti = pcall(require, 'mason-tool-installer')
+    if mti_ok and mti.setup then
+      mti.setup {
+        ensure_installed = {
+          'ktlint',
+          'jdtls',
+          'stylua',
+          'java-debug-adapter',
+          'kotlin-debug-adapter',
+        },
+        skip_update = false,
+      }
+    else
+      vim.notify('mason-tool-installer not available; skipping tool installer setup', vim.log.levels.INFO)
+    end
   end,
   once = true,
 })
@@ -67,66 +80,75 @@ vim.api.nvim_create_autocmd('VimEnter', {
     jdk_home = jdk_home or os.getenv('JAVA_HOME') or '/usr/lib/jvm/java-21-openjdk'
 
     -- Start JDTLS (Java)
-    local jdtls = require('jdtls')
-    local project_name = vim.fn.fnamemodify(root_dir, ':p:h:t')
-    local workspace_dir = vim.fn.stdpath('data') .. '/jdtls-workspace/' .. project_name
+    local jdtls_ok, jdtls = pcall(require, 'jdtls')
+    if jdtls_ok and jdtls then
+      local project_name = vim.fn.fnamemodify(root_dir, ':p:h:t')
+      local workspace_dir = vim.fn.stdpath('data') .. '/jdtls-workspace/' .. project_name
 
-    local bundles = vim.split(
-      vim.fn.glob(vim.fn.stdpath('data') .. '/mason/packages/java-debug-adapter/extension/server/com.microsoft.java.debug.plugin-*.jar', true),
-      '\n',
-      { trimempty = true }
-    )
+      local bundles = vim.split(
+        vim.fn.glob(vim.fn.stdpath('data') .. '/mason/packages/java-debug-adapter/extension/server/com.microsoft.java.debug.plugin-*.jar', true),
+        '\n',
+        { trimempty = true }
+      )
 
-    local jdtls_capabilities = vim.tbl_deep_extend('force', vim.lsp.protocol.make_client_capabilities(), require('cmp_nvim_lsp').default_capabilities())
-    local extendedClientCapabilities = jdtls.extendedClientCapabilities
-    extendedClientCapabilities.resolveAdditionalTextEditsSupport = true
+      local cmp_ok2, cmp_nvim_lsp = pcall(require, 'cmp_nvim_lsp')
+      local jdtls_capabilities = vim.lsp.protocol.make_client_capabilities()
+      if cmp_ok2 and cmp_nvim_lsp and cmp_nvim_lsp.default_capabilities then
+        jdtls_capabilities = vim.tbl_deep_extend('force', jdtls_capabilities, cmp_nvim_lsp.default_capabilities())
+      end
 
-    local jdtls_config = {
-      cmd = {
-        vim.fn.expand('~/.local/share/nvim/mason/bin/jdtls'),
-        '--java-executable', java_cmd,
-        '-data', workspace_dir,
-      },
-      root_dir = root_dir,
-      capabilities = jdtls_capabilities,
-      settings = {
-        java = {
-          signatureHelp = { enabled = true },
-          contentProvider = { preferred = 'fernflower' },
-          completion = {
-            favoriteStaticMembers = {
-              'org.junit.Assert.*',
-              'org.junit.jupiter.api.Assertions.*',
-              'org.mockito.Mockito.*',
-              'io.mockk.MockKKt.*',
+      local extendedClientCapabilities = jdtls.extendedClientCapabilities
+      extendedClientCapabilities.resolveAdditionalTextEditsSupport = true
+
+      local jdtls_config = {
+        cmd = {
+          vim.fn.expand('~/.local/share/nvim/mason/bin/jdtls'),
+          '--java-executable', java_cmd,
+          '-data', workspace_dir,
+        },
+        root_dir = root_dir,
+        capabilities = jdtls_capabilities,
+        settings = {
+          java = {
+            signatureHelp = { enabled = true },
+            contentProvider = { preferred = 'fernflower' },
+            completion = {
+              favoriteStaticMembers = {
+                'org.junit.Assert.*',
+                'org.junit.jupiter.api.Assertions.*',
+                'org.mockito.Mockito.*',
+                'io.mockk.MockKKt.*',
+              },
+              filteredTypes = {
+                'com.sun.*', 'io.micrometer.shaded.*', 'java.awt.*', 'jdk.*', 'sun.*',
+              },
             },
-            filteredTypes = {
-              'com.sun.*', 'io.micrometer.shaded.*', 'java.awt.*', 'jdk.*', 'sun.*',
+            sources = {
+              organizeImports = { starThreshold = 9999, staticStarThreshold = 9999 },
             },
-          },
-          sources = {
-            organizeImports = { starThreshold = 9999, staticStarThreshold = 9999 },
-          },
-          codeGeneration = {
-            toString = {
-              template = '${object.className}{${member.name()}=${member.value}, ${otherMembers}}',
+            codeGeneration = {
+              toString = {
+                template = '${object.className}{${member.name()}=${member.value}, ${otherMembers}}',
+              },
+              useBlocks = true,
             },
-            useBlocks = true,
-          },
-          configuration = {
-            runtimes = {
-              { name = 'JavaSE-21', path = jdk_home, default = true },
+            configuration = {
+              runtimes = {
+                { name = 'JavaSE-21', path = jdk_home, default = true },
+              },
             },
           },
         },
-      },
-      init_options = {
-        bundles = bundles,
-        extendedClientCapabilities = extendedClientCapabilities,
-      },
-    }
+        init_options = {
+          bundles = bundles,
+          extendedClientCapabilities = extendedClientCapabilities,
+        },
+      }
 
-    jdtls.start_or_attach(jdtls_config)
+      jdtls.start_or_attach(jdtls_config)
+    else
+      vim.notify('jdtls plugin not available; skipping JDTLS startup', vim.log.levels.INFO)
+    end
 
     -- Start Kotlin LSP
     local kls_jdk = find_jdk()
