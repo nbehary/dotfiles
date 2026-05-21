@@ -45,15 +45,27 @@ print_info() {
 # Check if Kotlin LSP is installed
 check_kotlin_lsp() {
   print_header "Checking Kotlin LSP Installation"
-  
-  if command -v kotlin-language-server &> /dev/null; then
-    local version=$(kotlin-language-server --version 2>/dev/null || echo "unknown")
-    print_success "kotlin-language-server found: $version"
-    return 0
-  else
+
+  if ! command -v kotlin-language-server &>/dev/null; then
     print_error "kotlin-language-server not found in PATH"
     return 1
   fi
+
+  # KLS doesn't support --version; detect compiler version from bundled stdlib JAR.
+  # installDist layout: bin/../lib/  Homebrew layout: bin/../libexec/lib/
+  local base_dir
+  base_dir="$(dirname "$(command -v kotlin-language-server)")/.."
+  local jar_version
+  jar_version=$(find "${base_dir}/lib" "${base_dir}/libexec/lib" -maxdepth 1 \
+    -name "kotlin-stdlib-*.jar" 2>/dev/null \
+    | sed 's/.*kotlin-stdlib-\(.*\)\.jar/\1/' | head -1 || true)
+
+  if [ -n "$jar_version" ]; then
+    print_success "kotlin-language-server found (Kotlin compiler: ${jar_version})"
+  else
+    print_success "kotlin-language-server found"
+  fi
+  return 0
 }
 
 # Check if Neovim config exists
