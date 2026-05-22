@@ -30,13 +30,53 @@ vim.api.nvim_create_autocmd('VimEnter', {
     vim.keymap.set('n', '[t', '<cmd>FloatermPrev<CR>', { desc = 'Prev floating terminal' })
     vim.keymap.set('t', '[t', '<cmd>FloatermPrev<CR>', { desc = 'Prev floating terminal' })
 
+    -- Lazylogcat Floaterm
+    local lazylogcat_wintype = 'float'
+    local function toggle_lazylogcat()
+      local bufnr = vim.fn['floaterm#terminal#get_bufnr']('lazylogcat')
+      if bufnr == -1 then
+        local root = vim.fs.dirname(vim.fs.find({ 'gradlew', 'settings.gradle', 'settings.gradle.kts' }, { upward = true })[1] or vim.fn.getcwd())
+        local cmd_str = "cd " .. vim.fn.shellescape(root) .. " && grep -m 1 -h -oE 'applicationId[[:space:]]*=?[[:space:]]*\"[^\"]+\"' build.gradle.kts app/build.gradle.kts build.gradle app/build.gradle 2>/dev/null | grep -oE '\"[^\"]+\"' | tr -d '\"'"
+        local handle = io.popen(cmd_str)
+        local pkg = ''
+        if handle then
+          pkg = handle:read('*a'):gsub('%s+', '')
+          handle:close()
+        end
+        local cmd = 'lazylogcat'
+        if pkg ~= '' then
+          cmd = cmd .. ' --pkg ' .. vim.fn.shellescape(pkg)
+        end
+        local pos = lazylogcat_wintype == 'float' and 'center' or 'bottom'
+        vim.cmd('FloatermNew --name=lazylogcat --title=lazylogcat --wintype=' .. lazylogcat_wintype .. ' --position=' .. pos .. ' ' .. cmd)
+      else
+        vim.cmd('FloatermToggle lazylogcat')
+      end
+    end
+
+    local function swap_lazylogcat_wintype()
+      lazylogcat_wintype = lazylogcat_wintype == 'float' and 'split' or 'float'
+      local pos = lazylogcat_wintype == 'float' and 'center' or 'bottom'
+      local bufnr = vim.fn['floaterm#terminal#get_bufnr']('lazylogcat')
+      if bufnr ~= -1 then
+        vim.cmd('FloatermUpdate --name=lazylogcat --wintype=' .. lazylogcat_wintype .. ' --position=' .. pos)
+      else
+        vim.notify('lazylogcat not running, will open as ' .. lazylogcat_wintype .. ' next time.', vim.log.levels.INFO)
+      end
+    end
+
+    vim.keymap.set('n', '<leader>ll', toggle_lazylogcat, { desc = 'Toggle lazylogcat' })
+    vim.keymap.set('t', '<leader>ll', toggle_lazylogcat, { desc = 'Toggle lazylogcat' })
+    vim.keymap.set('n', '<leader>ls', swap_lazylogcat_wintype, { desc = 'Swap lazylogcat window type' })
+    vim.keymap.set('t', '<leader>ls', swap_lazylogcat_wintype, { desc = 'Swap lazylogcat window type' })
+
     -- Gitsigns Configuration
     pcall(function()
       require('gitsigns').setup()
       vim.keymap.set('n', '<leader>gp', ':Gitsigns preview_hunk <CR>', { desc = 'Preview git hunk' })
       vim.keymap.set('n', '<leader>gl', ':Gitsigns toggle_current_line_blame <CR>', { desc = 'Toggle git blame' })
       vim.keymap.set('n', '<leader>gd', ':DiffviewOpen<CR>', { desc = 'Open diffview (all changes)' })
-      vim.keymap.set('n', '<leader>gD', function()
+      vim.keymap.set('n', '<leader>gdf', function()
         vim.cmd('DiffviewOpen HEAD -- ' .. vim.fn.expand('%'))
       end, { desc = 'Diff current file' })
     end)
@@ -145,12 +185,6 @@ vim.api.nvim_create_autocmd('VimEnter', {
       require('android').setup()
       vim.keymap.set('n', '<leader>al', '<cmd>AndroidLogcat<cr>', { desc = '[A]ndroid [L]ogcat' })
       vim.keymap.set('n', '<leader>ag', '<cmd>AndroidGradleTasks<cr>', { desc = '[A]ndroid [G]radle tasks' })
-    end)
-
-    -- Android Project View
-    pcall(function()
-      require('android_project_view').setup()
-      vim.keymap.set('n', '<leader>ap', '<cmd>AndroidProjectViewToggle<cr>', { desc = '[A]ndroid [P]roject view' })
     end)
 
     -- Neogit Configuration

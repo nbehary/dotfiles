@@ -40,9 +40,15 @@ if [[ ! -x ./gradlew ]]; then
   err "./gradlew not found or not executable. Run from project root."
   exit 1
 fi
-log "Building and installing (./gradlew installFirebaseCtDebug)..."
-./gradlew installFirebaseCtDebug
-# ./gradlew installDebug  # generic fallback if not using firebaseCt variant
+
+if [[ "$PACKAGE" == com.cccis.* ]]; then
+  TASK="installFirebaseCtDebug"
+else
+  TASK="installDebug"
+fi
+
+log "Building and installing (./gradlew $TASK)..."
+./gradlew "$TASK"
 
 # --- find launcher activity ---
 log "Resolving launcher activity..."
