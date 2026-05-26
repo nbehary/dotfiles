@@ -114,7 +114,9 @@ if root_dir then
   end, { buffer = 0, desc = '[G]radle [E]rrors logcat (app crashes)' })
 
   -- android CLI integration
-  if vim.fn.executable 'android' == 1 then
+  local android_script = vim.fn.expand('~/dotfiles/bin/android-run')
+  local android_available = (vim.fn.executable('android') == 1) or (vim.fn.filereadable(android_script) == 1)
+  if android_available then
     -- Helper to get the first active connected device/emulator
     local function get_active_device()
       local devices = {}
@@ -171,7 +173,18 @@ if root_dir then
       local device = get_active_device()
       local run_flags = device and (' --device ' .. vim.fn.shellescape(device)) or ''
 
-      vim.cmd('!' .. gradlew .. ' ' .. task .. ' && android run' .. run_flags .. ' --apks ' .. vim.fn.shellescape(apk))
+      local android_script = vim.fn.expand('~/dotfiles/bin/android-run')
+      local cmd
+      if vim.fn.executable('android') == 1 then
+        cmd = gradlew .. ' ' .. task .. ' && android run' .. run_flags .. ' --apks ' .. vim.fn.shellescape(apk)
+      elseif vim.fn.filereadable(android_script) == 1 then
+        -- android-run script handles build+install; run it from project root
+        cmd = 'cd ' .. vim.fn.shellescape(root_dir) .. ' && ' .. vim.fn.shellescape(android_script)
+      else
+        vim.notify('No android CLI or android-run script found; cannot run app', vim.log.levels.ERROR)
+        return
+      end
+      vim.cmd('!' .. cmd)
     end
 
     -- Build with appropriate task (firebaseCt vs standard), then deploy and launch on connected device
