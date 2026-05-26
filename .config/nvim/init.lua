@@ -36,6 +36,41 @@ vim.keymap.set('n', '<leader>n', ':Neogit<cr>', { desc = 'Neogit status' })
 -- Diffview
 vim.keymap.set('n', '<leader>gd', ':DiffviewOpen HEAD~1..HEAD<cr>', { desc = 'Diffview (latest commit)' })
 vim.keymap.set('n', '<leader>gx', ':DiffviewClose<cr>', { desc = 'Close Diffview' })
+-- Diff current buffer file between development and current branch
+vim.keymap.set('n', '<leader>gF', function()
+  local bufname = vim.api.nvim_buf_get_name(0)
+  if bufname == '' then
+    vim.notify('No file in current buffer', vim.log.levels.WARN)
+    return
+  end
+  -- Try to resolve the git repo root from the file's directory, fall back to cwd
+  local file_dir = vim.fn.fnamemodify(bufname, ':h')
+  local root = vim.fn.systemlist('git -C ' .. vim.fn.fnameescape(file_dir) .. ' rev-parse --show-toplevel')[1]
+  if not root or root == '' then
+    root = vim.fn.systemlist('git rev-parse --show-toplevel')[1]
+  end
+  if not root or root == '' then
+    vim.notify('Not in a git repository', vim.log.levels.WARN)
+    return
+  end
+  local branch = vim.fn.systemlist('git -C ' .. vim.fn.fnameescape(root) .. ' rev-parse --abbrev-ref HEAD')[1]
+  if not branch or branch == '' then
+    vim.notify('Could not determine current branch', vim.log.levels.WARN)
+    return
+  end
+  -- Compute path relative to repo root
+  local relpath = bufname
+  if relpath:sub(1, #root) == root then
+    -- strip leading root + '/'
+    relpath = relpath:sub(#root + 2)
+  else
+    relpath = vim.fn.fnamemodify(relpath, ':.')
+  end
+  local prev_cwd = vim.fn.getcwd()
+  vim.api.nvim_set_current_dir(root)
+  vim.cmd('DiffviewOpen ' .. 'development' .. '..' .. branch .. ' ' .. vim.fn.fnameescape(relpath))
+  vim.api.nvim_set_current_dir(prev_cwd)
+end, { desc = 'Diff current file between development and current branch' })
 
 -- [[ Gradle.nvim keybindings ]]
 vim.keymap.set({ 'n', 'v' }, '<leader>Gg', '<cmd>Gradle<cr>', { desc = 'Gradle Projects' })
