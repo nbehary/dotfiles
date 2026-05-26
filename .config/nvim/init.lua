@@ -28,7 +28,18 @@ end
 vim.keymap.set('i', 'jk', '<ESC>')
 
 -- NvimTree toggle
-vim.keymap.set('n', '<leader>pv', ':NvimTreeToggle<cr>')
+vim.keymap.set('n', '<leader>pv', function()
+  vim.cmd('NvimTreeToggle')
+  pcall(vim.cmd, 'NvimTreeFocus')
+end, { desc = 'NvimTree toggle and focus' })
+
+-- Focus NvimTree when opened by any command
+vim.api.nvim_create_autocmd('FileType', {
+  pattern = 'NvimTree',
+  callback = function()
+    pcall(vim.cmd, 'NvimTreeFocus')
+  end,
+})
 
 -- Neogit
 vim.keymap.set('n', '<leader>n', ':Neogit<cr>', { desc = 'Neogit status' })
