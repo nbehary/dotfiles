@@ -157,6 +157,18 @@ vim.api.nvim_create_autocmd('ColorScheme', {
   end,
 })
 
+-- Auto save when leaving insert mode
+vim.api.nvim_create_augroup('AutoSaveOnInsertLeave', { clear = true })
+vim.api.nvim_create_autocmd('InsertLeave', {
+  group = 'AutoSaveOnInsertLeave',
+  pattern = '*',
+  callback = function()
+    if vim.bo.modified and vim.bo.buftype == '' and vim.api.nvim_buf_get_name(0) ~= '' and not vim.bo.readonly then
+      vim.cmd('silent! update')
+    end
+  end,
+})
+
 -- [[ Load colorscheme ]]
 -- Ensure optional colorscheme plugin is loaded before applying
 pcall(vim.cmd, 'packadd kanagawa.nvim')
