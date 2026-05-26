@@ -159,10 +159,10 @@ vim.api.nvim_create_autocmd('ColorScheme', {
 
 -- [[ Load colorscheme ]]
 -- Ensure optional colorscheme plugin is loaded before applying
-pcall(vim.cmd, 'packadd catppuccin')
-local ok, err = pcall(vim.cmd, 'colorscheme catppuccin-mocha')
+pcall(vim.cmd, 'packadd kanagawa.nvim')
+local ok, err = pcall(vim.cmd, 'colorscheme kanagawa')
 if not ok then
-  vim.notify('Cannot load colorscheme catppuccin-mocha: ' .. tostring(err), vim.log.levels.WARN)
+  vim.notify('Cannot load colorscheme kanagawa: ' .. tostring(err), vim.log.levels.WARN)
 end
 pcall(vim.cmd, "hi Comment gui=none")
 
