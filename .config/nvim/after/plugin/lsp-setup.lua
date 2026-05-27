@@ -199,7 +199,9 @@ vim.api.nvim_create_autocmd('VimEnter', {
       },
     })
 
-    vim.notify('Android project detected. Java (JDTLS) and Kotlin LSPs initializing...\nKotlin LSP diagnostics disabled (ktlint for linting)', vim.log.levels.INFO)
+    vim.schedule(function()
+      vim.notify('Android project detected. Java (JDTLS) and Kotlin LSPs initializing... Kotlin LSP diagnostics disabled (ktlint for linting)', vim.log.levels.INFO)
+    end)
   end,
   once = true,
 })
