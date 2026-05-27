@@ -23,8 +23,8 @@ elseif type(delta.toggle) == 'function' then
   vim.keymap.set('n', '<leader>dd', delta.toggle, { noremap = true, silent = true, desc = 'Toggle Delta' })
 end
 
--- Map <leader>da to open Delta for changed files (prefer working-tree changes; fall back to last commit)
-vim.keymap.set('n', '<leader>da', function()
+-- Map <leader>dv to open Delta for changed files (prefer working-tree changes; fall back to last commit)
+vim.keymap.set('n', '<leader>dv', function()
   -- Determine git repo root; fall back to cwd when not in a git repo
   local root = vim.fn.systemlist('git rev-parse --show-toplevel')[1]
   if root == nil or root == '' then
