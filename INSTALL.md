@@ -21,8 +21,14 @@ This configuration and its automated setup scripts support:
 First, clone the dotfiles repository to your local user directory (e.g., `~/dotfiles` or `~/working_dotfiles`):
 
 ```bash
-git clone <your-dotfiles-repo-url> ~/dotfiles
+git clone https://github.com/nbehary/dotfiles ~/dotfiles
 cd ~/dotfiles
+```
+
+Next, checkout the `android_neovim2` branch:
+
+```bash
+git checkout android_neovim2
 ```
 
 ### Step 2: Establish the Neovim Config Symlink
