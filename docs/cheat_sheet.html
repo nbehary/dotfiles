@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Neovim Keybinds Cheat Sheet</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap');
+
+    @page {
+      size: letter landscape;
+      margin: 0.15in;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Outfit', sans-serif;
+      background-color: #faf6ee; /* Kanagawa Lotus Background (warm white) */
+      color: #43435c; /* Kanagawa Lotus Ink (dark slate) */
+      margin: 0;
+      padding: 0;
+      font-size: 8.8px;
+      line-height: 1.2;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+
+    /* Grid Layout */
+    .container {
+      width: 100%;
+      max-width: 100%;
+    }
+
+    /* Header Styling */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 2px solid #dad3c5; /* Lotus light border */
+      padding-bottom: 4px;
+      margin-bottom: 8px;
+    }
+
+    .title-area h1 {
+      font-family: 'Outfit', sans-serif;
+      font-weight: 700;
+      font-size: 14px;
+      margin: 0;
+      color: #c8793b; /* Lotus Orange */
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+
+    .title-area p {
+      margin: 1px 0 0 0;
+      font-size: 8px;
+      color: #6f6e66; /* Lotus Gray */
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .legend {
+      display: flex;
+      gap: 8px;
+      background: #f2ebdd; /* Lotus soft card background */
+      border: 1px solid #dad3c5;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 8.2px;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 3px;
+    }
+
+    .legend-key {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700;
+      background: #d3e3e5; /* Lotus light wave blue */
+      color: #2b606f; /* Lotus wave blue text */
+      padding: 0.5px 3px;
+      border-radius: 2px;
+    }
+
+    /* Pillars Columns */
+    .columns-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+
+    /* Card Panels */
+    .card {
+      background: #f2ebdd; /* Lotus soft card background */
+      border: 1px solid #e2dbcd; /* Lotus card border */
+      border-radius: 6px;
+      padding: 6px 8px;
+      margin-bottom: 8px;
+      break-inside: avoid;
+    }
+
+    .card h2 {
+      font-size: 10px;
+      font-weight: 600;
+      margin: 0 0 4px 0;
+      padding-bottom: 2px;
+      border-bottom: 1px solid #dad3c5;
+      color: #2d566b; /* Lotus primary header blue */
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .card h2 span.accent {
+      color: #5c7f46; /* Lotus green */
+    }
+
+    /* Keybind Tables */
+    .key-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .key-table tr {
+      border-bottom: 1px solid #e8e1d4;
+    }
+
+    .key-table tr:last-child {
+      border-bottom: none;
+    }
+
+    .key-table td {
+      padding: 3px 2px;
+      vertical-align: middle;
+    }
+
+    .key-col {
+      width: 32%;
+      white-space: nowrap;
+    }
+
+    .key-badge {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700;
+      background: #e8e4d8; /* Warm light badge */
+      color: #2d566b; /* Deep slate blue */
+      border: 1px solid #d2cbb8;
+      padding: 1px 4px;
+      border-radius: 3px;
+      font-size: 8.5px;
+      display: inline-block;
+    }
+
+    .action-col {
+      color: #43435c; /* Sharp Lotus Ink */
+      font-size: 9px;
+    }
+
+    .mode-col {
+      width: 8%;
+      text-align: right;
+    }
+
+    .mode-badge {
+      font-size: 7px;
+      font-weight: 700;
+      text-transform: uppercase;
+      padding: 0.5px 2px;
+      border-radius: 2px;
+      display: inline-block;
+    }
+
+    .mode-n {
+      background: #e2dfce;
+      color: #595643; /* Neutral normal mode */
+    }
+    .mode-v {
+      background: #f4d8de;
+      color: #a34458; /* Pink visual mode */
+    }
+    .mode-i {
+      background: #d3e3e5;
+      color: #2b606f; /* Teal insert mode */
+    }
+    .mode-t {
+      background: #dbe7d3;
+      color: #456b32; /* Green terminal mode */
+    }
+
+    /* Visual Adjustments for Print Layout */
+    .card:last-child {
+      margin-bottom: 0;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    
+    <!-- HEADER AREA -->
+    <div class="header">
+      <div class="title-area">
+        <h1>Neovim Keybinds &amp; Shortcuts</h1>
+        <p>Classic vim.pack Architecture Dotfiles Cheat Sheet</p>
+      </div>
+      <div class="legend">
+        <div class="legend-item">
+          <span class="legend-key">&lt;leader&gt;</span> Space
+        </div>
+        <div class="legend-item">
+          <span class="legend-key">&lt;C-x&gt;</span> Ctrl + X
+        </div>
+        <div class="legend-item">
+          <span class="legend-key">jk</span> Escape (Insert mode)
+        </div>
+      </div>
+    </div>
+
+    <!-- MAIN PILLARS COLUMNS (3 COLUMNS) -->
+    <div class="columns-grid">
+      
+      <!-- COLUMN 1: NAVIGATION & FILE SYSTEM -->
+      <div class="column">
+        
+        <!-- Harpoon & Motions -->
+        <div class="card">
+          <h2>🧭 Core Navigation &amp; Motion</h2>
+          <table class="key-table">
+            <tr>
+              <td class="key-col"><span class="key-badge">s</span></td>
+              <td class="action-col">Leap forward</td>
+              <td class="mode-col"><span class="mode-badge mode-n">N/V</span></td>
+            </tr>
+            <tr>
+              <td class="key-col"><span class="key-badge">S</span></td>
+              <td class="action-col">Leap from another window</td>
+              <td class="mode-col"><span class="mode-badge mode-n">N/V</span></td>
+            </tr>
+            <tr>
+              <td class="key-col"><span class="key-badge">&lt;leader&gt;a</span></td>
+              <td class="action-col">Add current file to Harpoon</td>
+              <td class="mode-col"><span class="mode-badge mode-n">N</span></td>
+            </tr>
+            <tr>
+              <td class="key-col"><span class="key-badge">&lt;C-e&gt;</span></td>
+              <td class="action-col">Toggle Harpoon dashboard menu</td>
+              <td class="mode-col"><span class="mode-badge mode-n">N</span></td>
+            </tr>
+            <tr>
+              <td class="key-col"><span class="key-badge">&lt;C-h&gt;</span> / <span class="key-badge">&lt;C-t&gt;</span></td>
+              <td class="action-col">Go to Harpoon file 1 / 2</td>
+              <td class="mode-col"><span class="mode-badge mode-n">N</span></td>
+            </tr>
+            <tr>
+              <td class="key-col"><span class="key-badge">&lt;C-n&gt;</span> / <span class="key-badge">&lt;C-s&gt;</span></td>
+              <td class="action-col">Go to Harpoon file 3 / 4</td>
+              <td class="mode-col"><span class="mode-badge mode-n">N</span></td>
+            </tr>
+            <tr>
+              <td class="key-col"><span class="key-badge">&lt;leader&gt;hc</span></td>
+              <td class="action-col">Clear all Harpoon marks</td>
+              <td class="mode-col"><span class="mode-badge mode-n">N</span></td>
+            </tr>
+          </table>
+        </div>
+
+        <!-- Files & Buffers -->
+        <div class="card">
+          <h2>📂 File Management &amp; Buffers</h2>
+          <table class="key-table">
+            <tr>
+              <td class="key-col"><span class="key-badge">-</span></td>
+              <td class="action-col">Open parent dir (Floating Oil)</td>
+              <td class="mode-col"><span class="mode-badge mode-n">N</span></td>
+            </tr>
+            <tr>
+              <td class="key-col"><span class="key-badge">&lt;space&gt;-</span></td>
+              <td class="action-col">Toggle floating Oil directory</td>
+              <td class="mode-col"><span class="mode-badge mode-n">N</span></td>
+            </tr>
+            <tr>
+              <td class="key-col"><span class="key-badge">&lt;leader&gt;pv</span></td>
+              <td class="action-col">Toggle &amp; Focus NvimTree</td>
+              <td class="mode-col"><span class="mode-badge mode-n">N</span></td>
+            </tr>
+            <tr>
+              <td class="key-col"><span class="key-badge">&lt;leader&gt;u</span></td>
+              <td class="action-col">Toggle Undotree history panel</td>
+              <td class="mode-col"><span class="mode-badge mode-n">N</span></td>
+            </tr>
+            <tr>
+              <td class="key-col"><span class="key-badge">&lt;leader&gt;tN</span></td>
+              <td class="action-col">Open new workspace tab</td>
+              <td class="mode-col"><span class="mode-badge mode-n">N</span></td>
+            </tr>
+            <tr>
+              <td class="key-col"><span class="key-badge">&lt;leader&gt;tn</span> / <span class="key-badge">tp</span></td>
+              <td class="action-col">Go to Next / Prev tab</td>
+              <td class="mode-col"><span class="mode-badge mode-n">N</span></td>
+            </tr>
+            <tr>
+              <td class="key-col"><span class="key-badge">&lt;leader&gt;td</span></td>
+              <td class="action-col">Close active tab</td>
+              <td class="mode-col"><span class="mode-badge mode-n">N</span></td>
+            </tr>
+          </table>
+        </div>
+
+        <!-- Terminals -->
+        <div class="card">
+          <h2>💻 Terminal Integration (Floaterm)</h2>
+          <table class="key-table">
+            <tr>
+              <td class="key-col"><span class="key-badge">&lt;leader&gt;;</span></td>
+              <td class="action-col">Toggle active floating terminal</td>
+              <td class="mode-col"><span class="mode-badge mode-n">N/T</span></td>
+            </tr>
+            <tr>
+              <td class="key-col"><span class="key-badge">&lt;leader&gt;T</span></td>
+              <td class="action-col">Create new floating terminal</td>
+              <td class="mode-col"><span class="mode-badge mode-n">N/T</span></td>
+            </tr>
+            <tr>
+              <td class="key-col"><span class="key-badge">]t</span> / <span class="key-badge">[t</span></td>
+              <td class="action-col">Switch to Next / Prev terminal</td>
+              <td class="mode-col"><span class="mode-badge mode-n">N/T</span></td>
+            </tr>
+          </table>
+        </div>
+
+      </div>
+
+      <!-- COLUMN 2: SEARCH & LSP WORKFLOW -->
+      <div class="column">
+        
+        <!-- Telescope Searching -->
+        <div class="card">
+          <h2>🔍 Search &amp; Discovery (Telescope)</h2>
+          <table class="key-table">
+            <tr>
+              <td class="key-col"><span class="key-badge">&lt;leader&gt;sf</span></td>
+              <td class="action-col">Search Files in workspace</td>
+              <td class="mode-col"><span class="mode-badge mode-n">N</span></td>
+            </tr>
+            <tr>
+              <td class="key-col"><span class="key-badge">&lt;leader&gt;sg</span></td>
+              <td class="action-col">Search by Grep (live_grep)</td>
+              <td class="mode-col"><span class="mode-badge mode-n">N</span></td>
+            </tr>
+            <tr>
+              <td class="key-col"><span class="key-badge">&lt;leader&gt;s.</span></td>
+              <td class="action-col">Search Recent Files</td>
+              <td class="mode-col"><span class="mode-badge mode-n">N</span></td>
+            </tr>
+            <tr>
+              <td class="key-col"><span class="key-badge">&lt;leader&gt;&lt;leader&gt;</span></td>
+              <td class="action-col">Find existing buffer tab</td>
+              <td class="mode-col"><span class="mode-badge mode-n">N</span></td>
+            </tr>
+            <tr>
+              <td class="key-col"><span class="key-badge">&lt;leader&gt;sw</span></td>
+              <td class="action-col">Search current word under cursor</td>
+              <td class="mode-col"><span class="mode-badge mode-n">N</span></td>
+            </tr>
+            <tr>
+              <td class="key-col"><span class="key-badge">&lt;leader&gt;sk</span></td>
+              <td class="action-col">Search defined keymaps</td>
+              <td class="mode-col"><span class="mode-badge mode-n">N</span></td>
+            </tr>
+            <tr>
+              <td class="key-col"><span class="key-badge">&lt;leader&gt;sd</span></td>
+              <td class="action-col">Search active diagnostics</td>
+              <td class="mode-col"><span class="mode-badge mode-n">N</span></td>
+            </tr>
+            <tr>
+              <td class="key-col"><span class="key-badge">&lt;leader&gt;sh</span></td>
+              <td class="action-col">Search help tags documentation</td>
+              <td class="mode-col"><span class="mode-badge mode-n">N</span></td>
+            </tr>
+            <tr>
+              <td class="key-col"><span class="key-badge">&lt;leader&gt;sr</span></td>
+              <td class="action-col">Resume previous Telescope search</td>
+              <td class="mode-col"><span class="mode-badge mode-n">N</span></td>
+            </tr>
+          </table>
+        </div>
+
+        <!-- LSP / Code Refactoring -->
+        <div class="card">
+          <h2>⚙️ LSP, Diagnostics &amp; Structure</h2>
+          <table class="key-table">
+            <tr>
+              <td class="key-col"><span class="key-badge">gd</span> / <span class="key-badge">gr</span></td>
+              <td class="action-col">Go to Definition / References</td>
+              <td class="mode-col"><span class="mode-badge mode-n">N</span></td>
+            </tr>
+            <tr>
+              <td class="key-col"><span class="key-badge">&lt;leader&gt;rn</span></td>
+              <td class="action-col">Rename symbol across workspace</td>
+              <td class="mode-col"><span class="mode-badge mode-n">N</span></td>
+            </tr>
+            <tr>
+              <td class="key-col"><span class="key-badge">&lt;leader&gt;ca</span></td>
+              <td class="action-col">Code actions &amp; Quick-fixes</td>
+              <td class="mode-col"><span class="mode-badge mode-n">N</span></td>
+            </tr>
+            <tr>
+              <td class="key-col"><span class="key-badge">&lt;leader&gt;l</span></td>
+              <td class="action-col">Format active buffer (Conform)</td>
+              <td class="mode-col"><span class="mode-badge mode-n">N/V</span></td>
+            </tr>
+            <tr>
+              <td class="key-col"><span class="key-badge">&lt;leader&gt;dw</span></td>
+              <td class="action-col">Open floating diagnostic text</td>
+              <td class="mode-col"><span class="mode-badge mode-n">N</span></td>
+            </tr>
+            <tr>
+              <td class="key-col"><span class="key-badge">]d</span> / <span class="key-badge">[d</span></td>
+              <td class="action-col">Navigate to Next / Prev diagnostic</td>
+              <td class="mode-col"><span class="mode-badge mode-n">N</span></td>
+            </tr>
+            <tr>
+              <td class="key-col"><span class="key-badge">]e</span> / <span class="key-badge">[e</span></td>
+              <td class="action-col">Navigate to Next / Prev Error</td>
+              <td class="mode-col"><span class="mode-badge mode-n">N</span></td>
+            </tr>
+            <tr>
+              <td class="key-col"><span class="key-badge">&lt;leader&gt;cs</span></td>
+              <td class="action-col">Toggle Code Structure (Aerial)</td>
+              <td class="mode-col"><span class="mode-badge mode-n">N</span></td>
+            </tr>
+            <tr>
+              <td class="key-col"><span class="key-badge">&lt;leader&gt;cn</span></td>
+              <td class="action-col">Toggle Code Navigation (Aerial)</td>
+              <td class="mode-col"><span class="mode-badge mode-n">N</span></td>
+            </tr>
+          </table>
+        </div>
+
+      </div>
+
+      <!-- COLUMN 3: GIT & RUNTIME / DEBUGGING -->
+      <div class="column">
+        
+        <!-- Git Operations -->
+        <div class="card">
+          <h2>🌱 Git Integration</h2>
+          <table class="key-table">
+            <tr>
+              <td class="key-col"><span class="key-badge">&lt;leader&gt;n</span></td>
+              <td class="action-col">Launch Neogit Dashboard</td>
+              <td class="mode-col"><span class="mode-badge mode-n">N</span></td>
+            </tr>
+            <tr>
+              <td class="key-col"><span class="key-badge">&lt;leader&gt;gd</span></td>
+              <td class="action-col">Diffview Open (latest commits)</td>
+              <td class="mode-col"><span class="mode-badge mode-n">N</span></td>
+            </tr>
+            <tr>
+              <td class="key-col"><span class="key-badge">&lt;leader&gt;gx</span></td>
+              <td class="action-col">Diffview Close</td>
+              <td class="mode-col"><span class="mode-badge mode-n">N</span></td>
+            </tr>
+            <tr>
+              <td class="key-col"><span class="key-badge">&lt;leader&gt;gF</span></td>
+              <td class="action-col">Diff buffer vs development branch</td>
+              <td class="mode-col"><span class="mode-badge mode-n">N</span></td>
+            </tr>
+            <tr>
+              <td class="key-col"><span class="key-badge">&lt;leader&gt;gp</span></td>
+              <td class="action-col">Gitsigns: Preview git hunk</td>
+              <td class="mode-col"><span class="mode-badge mode-n">N</span></td>
+            </tr>
+            <tr>
+              <td class="key-col"><span class="key-badge">&lt;leader&gt;gl</span></td>
+              <td class="action-col">Gitsigns: Toggle line Git blame</td>
+              <td class="mode-col"><span class="mode-badge mode-n">N</span></td>
+            </tr>
+          </table>
+        </div>
+
+        <!-- Debugging (DAP) -->
+        <div class="card">
+          <h2>🐞 Debugging (DAP) &amp; AI Chat</h2>
+          <table class="key-table">
+            <tr>
+              <td class="key-col"><span class="key-badge">&lt;F5&gt;</span></td>
+              <td class="action-col">Start / Continue debugging</td>
+              <td class="mode-col"><span class="mode-badge mode-n">N</span></td>
+            </tr>
+            <tr>
+              <td class="key-col"><span class="key-badge">&lt;F1&gt;</span> / <span class="key-badge">&lt;F2&gt;</span></td>
+              <td class="action-col">Step Into / Step Over</td>
+              <td class="mode-col"><span class="mode-badge mode-n">N</span></td>
+            </tr>
+            <tr>
+              <td class="key-col"><span class="key-badge">&lt;F3&gt;</span> / <span class="key-badge">&lt;F7&gt;</span></td>
+              <td class="action-col">Step Out / Toggle DAP UI</td>
+              <td class="mode-col"><span class="mode-badge mode-n">N</span></td>
+            </tr>
+            <tr>
+              <td class="key-col"><span class="key-badge">&lt;leader&gt;b</span></td>
+              <td class="action-col">Toggle Breakpoint</td>
+              <td class="mode-col"><span class="mode-badge mode-n">N</span></td>
+            </tr>
+            <tr>
+              <td class="key-col"><span class="key-badge">&lt;leader&gt;cc</span></td>
+              <td class="action-col">CodeCompanion Chat Panel</td>
+              <td class="mode-col"><span class="mode-badge mode-n">N/V</span></td>
+            </tr>
+            <tr>
+              <td class="key-col"><span class="key-badge">&lt;leader&gt;ai</span></td>
+              <td class="action-col">Copilot Chat Interface</td>
+              <td class="mode-col"><span class="mode-badge mode-n">N/V</span></td>
+            </tr>
+          </table>
+        </div>
+
+        <!-- Kotlin & Android Dev -->
+        <div class="card">
+          <h2>🤖 Kotlin &amp; Android Development</h2>
+          <table class="key-table">
+            <tr>
+              <td class="key-col"><span class="key-badge">&lt;leader&gt;gb</span></td>
+              <td class="action-col">Gradle assembleDebug build</td>
+              <td class="mode-col"><span class="mode-badge mode-n">N</span></td>
+            </tr>
+            <tr>
+              <td class="key-col"><span class="key-badge">&lt;leader&gt;gr</span></td>
+              <td class="action-col">Gradle build + deploy APK</td>
+              <td class="mode-col"><span class="mode-badge mode-n">N</span></td>
+            </tr>
+            <tr>
+              <td class="key-col"><span class="key-badge">&lt;leader&gt;gt</span></td>
+              <td class="action-col">Gradle test run</td>
+              <td class="mode-col"><span class="mode-badge mode-n">N</span></td>
+            </tr>
+            <tr>
+              <td class="key-col"><span class="key-badge">&lt;leader&gt;da</span></td>
+              <td class="action-col">Android Debug execution</td>
+              <td class="mode-col"><span class="mode-badge mode-n">N</span></td>
+            </tr>
+            <tr>
+              <td class="key-col"><span class="key-badge">&lt;leader&gt;al</span></td>
+              <td class="action-col">Launch Android Logcat monitor</td>
+              <td class="mode-col"><span class="mode-badge mode-n">N</span></td>
+            </tr>
+            <tr>
+              <td class="key-col"><span class="key-badge">&lt;leader&gt;gS</span></td>
+              <td class="action-col">Capture Android emulator screen</td>
+              <td class="mode-col"><span class="mode-badge mode-n">N</span></td>
+            </tr>
+          </table>
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</body>
+</html>
