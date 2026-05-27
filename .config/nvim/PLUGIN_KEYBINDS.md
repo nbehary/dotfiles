@@ -137,7 +137,7 @@ _A curated reference of all plugin keybindings in your Neovim configuration._
 ### Android Debug
 | Keybind | Mode | Action |
 |---------|------|--------|
-| `<leader>da` | Normal | Android Debug |
+| `<leader>ad` | Normal | Android Debug |
 | `<leader>dr` | Normal | Android Run (no debugger) |
 | `<leader>al` | Normal | Android Studio-like Logcat Viewer |
 | `<leader>ag` | Normal | Android Gradle tasks |
