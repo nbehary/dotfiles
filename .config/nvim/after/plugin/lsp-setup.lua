@@ -4,37 +4,60 @@
 vim.api.nvim_create_autocmd('VimEnter', {
   group = vim.api.nvim_create_augroup('lsp-setup-defer', { clear = true }),
   callback = function()
-    -- Set up Mason first
-    require('mason').setup()
+    local mason_ok, mason = pcall(require, 'mason')
+    if not mason_ok then
+      vim.notify('mason not available; LSP setup deferred', vim.log.levels.WARN)
+      return
+    end
+    mason.setup()
 
     local capabilities = vim.lsp.protocol.make_client_capabilities()
-    capabilities = vim.tbl_deep_extend('force', capabilities, require('cmp_nvim_lsp').default_capabilities())
+    local cmp_ok, cmp_nvim_lsp = pcall(require, 'cmp_nvim_lsp')
+    if cmp_ok and cmp_nvim_lsp and cmp_nvim_lsp.default_capabilities then
+      capabilities = vim.tbl_deep_extend('force', capabilities, cmp_nvim_lsp.default_capabilities())
+    end
 
-    require('mason-tool-installer').setup {
-      ensure_installed = {
-        'ktlint',
-        'jdtls',
-        'stylua',
-        'java-debug-adapter',
-        'kotlin-debug-adapter',
-      },
-      skip_update = false,
-    }
+    local mti_ok, mti = pcall(require, 'mason-tool-installer')
+    if mti_ok and mti.setup then
+      mti.setup {
+        ensure_installed = {
+          'ktlint',
+          'jdtls',
+          'stylua',
+          'java-debug-adapter',
+          'kotlin-debug-adapter',
+        },
+        skip_update = false,
+      }
+    end
   end,
   once = true,
 })
 
--- Auto-initialize Java and Kotlin LSPs in Android projects on startup
+local function find_gradle_root()
+  -- Prioritize settings.gradle (project root) over build.gradle (module root)
+  local root = vim.fs.find({ 'settings.gradle', 'settings.gradle.kts' }, { upward = true })[1]
+  if not root then
+    root = vim.fs.find({ 'build.gradle', 'build.gradle.kts' }, { upward = true })[1]
+  end
+  if not root then
+    root = vim.fs.find({ '.git' }, { upward = true })[1]
+  end
+  if root then
+    local dir = vim.fs.dirname(root)
+    if dir and dir ~= '' and dir ~= '.' then
+      return dir
+    end
+  end
+  return vim.fn.getcwd()
+end
+
 vim.api.nvim_create_autocmd('VimEnter', {
   group = vim.api.nvim_create_augroup('android-lsp-auto-init', { clear = true }),
   callback = function()
-    -- Detect Android project: look for build.gradle/gradlew upward from cwd
-    local root_dir = vim.fs.dirname(
-      vim.fs.find({ 'build.gradle', 'build.gradle.kts', 'gradlew' }, { upward = true })[1] or ''
-    )
-
-    if root_dir == '' or root_dir == '.' then
-      return -- Not an Android project
+    local root_dir = find_gradle_root()
+    if not root_dir or root_dir == '' or root_dir == '.' then
+      return
     end
 
     local function find_jdk()
@@ -66,69 +89,74 @@ vim.api.nvim_create_autocmd('VimEnter', {
     end
     jdk_home = jdk_home or os.getenv('JAVA_HOME') or '/usr/lib/jvm/java-21-openjdk'
 
-    -- Start JDTLS (Java)
-    local jdtls = require('jdtls')
-    local project_name = vim.fn.fnamemodify(root_dir, ':p:h:t')
-    local workspace_dir = vim.fn.stdpath('data') .. '/jdtls-workspace/' .. project_name
+    local jdtls_ok, jdtls = pcall(require, 'jdtls')
+    if jdtls_ok and jdtls then
+      local project_name = vim.fn.fnamemodify(root_dir, ':p:h:t')
+      local workspace_dir = vim.fn.stdpath('data') .. '/jdtls-workspace/' .. project_name
 
-    local bundles = vim.split(
-      vim.fn.glob(vim.fn.stdpath('data') .. '/mason/packages/java-debug-adapter/extension/server/com.microsoft.java.debug.plugin-*.jar', true),
-      '\n',
-      { trimempty = true }
-    )
+      local bundles = vim.split(
+        vim.fn.glob(vim.fn.stdpath('data') .. '/mason/packages/java-debug-adapter/extension/server/com.microsoft.java.debug.plugin-*.jar', true),
+        '\n',
+        { trimempty = true }
+      )
 
-    local jdtls_capabilities = vim.tbl_deep_extend('force', vim.lsp.protocol.make_client_capabilities(), require('cmp_nvim_lsp').default_capabilities())
-    local extendedClientCapabilities = jdtls.extendedClientCapabilities
-    extendedClientCapabilities.resolveAdditionalTextEditsSupport = true
+      local cmp_ok2, cmp_nvim_lsp = pcall(require, 'cmp_nvim_lsp')
+      local jdtls_capabilities = vim.lsp.protocol.make_client_capabilities()
+      if cmp_ok2 and cmp_nvim_lsp and cmp_nvim_lsp.default_capabilities then
+        jdtls_capabilities = vim.tbl_deep_extend('force', jdtls_capabilities, cmp_nvim_lsp.default_capabilities())
+      end
 
-    local jdtls_config = {
-      cmd = {
-        vim.fn.expand('~/.local/share/nvim/mason/bin/jdtls'),
-        '--java-executable', java_cmd,
-        '-data', workspace_dir,
-      },
-      root_dir = root_dir,
-      capabilities = jdtls_capabilities,
-      settings = {
-        java = {
-          signatureHelp = { enabled = true },
-          contentProvider = { preferred = 'fernflower' },
-          completion = {
-            favoriteStaticMembers = {
-              'org.junit.Assert.*',
-              'org.junit.jupiter.api.Assertions.*',
-              'org.mockito.Mockito.*',
-              'io.mockk.MockKKt.*',
+      local extendedClientCapabilities = jdtls.extendedClientCapabilities
+      extendedClientCapabilities.resolveAdditionalTextEditsSupport = true
+
+      local jdtls_config = {
+        cmd = {
+          vim.fn.expand('~/.local/share/nvim/mason/bin/jdtls'),
+          '--java-executable', java_cmd,
+          '-data', workspace_dir,
+        },
+        root_dir = root_dir,
+        capabilities = jdtls_capabilities,
+        settings = {
+          java = {
+            signatureHelp = { enabled = true },
+            contentProvider = { preferred = 'fernflower' },
+            completion = {
+              favoriteStaticMembers = {
+                'org.junit.Assert.*',
+                'org.junit.jupiter.api.Assertions.*',
+                'org.mockito.Mockito.*',
+                'io.mockk.MockKKt.*',
+              },
+              filteredTypes = {
+                'com.sun.*', 'io.micrometer.shaded.*', 'java.awt.*', 'jdk.*', 'sun.*',
+              },
             },
-            filteredTypes = {
-              'com.sun.*', 'io.micrometer.shaded.*', 'java.awt.*', 'jdk.*', 'sun.*',
+            sources = {
+              organizeImports = { starThreshold = 9999, staticStarThreshold = 9999 },
             },
-          },
-          sources = {
-            organizeImports = { starThreshold = 9999, staticStarThreshold = 9999 },
-          },
-          codeGeneration = {
-            toString = {
-              template = '${object.className}{${member.name()}=${member.value}, ${otherMembers}}',
+            codeGeneration = {
+              toString = {
+                template = '${object.className}{${member.name()}=${member.value}, ${otherMembers}}',
+              },
+              useBlocks = true,
             },
-            useBlocks = true,
-          },
-          configuration = {
-            runtimes = {
-              { name = 'JavaSE-21', path = jdk_home, default = true },
+            configuration = {
+              runtimes = {
+                { name = 'JavaSE-21', path = jdk_home, default = true },
+              },
             },
           },
         },
-      },
-      init_options = {
-        bundles = bundles,
-        extendedClientCapabilities = extendedClientCapabilities,
-      },
-    }
+        init_options = {
+          bundles = bundles,
+          extendedClientCapabilities = extendedClientCapabilities,
+        },
+      }
 
-    jdtls.start_or_attach(jdtls_config)
+      jdtls.start_or_attach(jdtls_config)
+    end
 
-    -- Start Kotlin LSP
     local kls_jdk = find_jdk()
     local kls_env = nil
     if kls_jdk then
@@ -139,6 +167,7 @@ vim.api.nvim_create_autocmd('VimEnter', {
       name = 'kotlin-language-server',
       cmd = { 'kotlin-language-server' },
       cmd_env = kls_env,
+      root_dir = root_dir,
       capabilities = vim.lsp.protocol.make_client_capabilities(),
       settings = {
         kotlin = {
@@ -155,35 +184,31 @@ vim.api.nvim_create_autocmd('VimEnter', {
               enabled = true,
             },
           },
+          -- Disable LSP diagnostics (unreliable with false positives)
+          -- Use ktlint via conform for reliable diagnostics instead
           diagnostics = {
-            enabled = true,
+            enabled = false,
           },
         },
       },
-      root_dir = root_dir,
     })
 
-    vim.notify('Android project detected. Java (JDTLS) and Kotlin LSPs initializing...', vim.log.levels.INFO)
+    vim.notify('Android project detected. Java (JDTLS) and Kotlin LSPs initializing...\nKotlin LSP diagnostics disabled (ktlint for linting)', vim.log.levels.INFO)
   end,
   once = true,
 })
 
--- Manually start Kotlin LSP on FileType
 vim.api.nvim_create_autocmd('FileType', {
   pattern = 'kotlin',
   group = vim.api.nvim_create_augroup('kotlin-lsp-start', { clear = true }),
   callback = function(event)
     local bufnr = event.buf
     
-    -- Check if already attached
     local clients = vim.lsp.get_clients { bufnr = bufnr }
     if #clients > 0 then
       return
     end
     
-    -- Resolve a JDK kotlin-language-server can actually run (it requires JDK <= 21,
-    -- and on some systems JAVA_HOME points at a macOS Android Studio path or the
-    -- distro's "default" JDK is too new). Try a few well-known locations.
     local function find_jdk()
       local candidates = {
         os.getenv('KOTLIN_LSP_JDK'),
@@ -207,12 +232,14 @@ vim.api.nvim_create_autocmd('FileType', {
       kls_env = { JAVA_HOME = kls_jdk, PATH = kls_jdk .. '/bin:' .. (vim.env.PATH or '') }
     end
 
-    -- Start kotlin-language-server
+    local root_dir = find_gradle_root()
+
     vim.lsp.start {
       name = 'kotlin-language-server',
       cmd = { 'kotlin-language-server' },
       cmd_env = kls_env,
       bufnr = bufnr,
+      root_dir = root_dir,
       capabilities = vim.lsp.protocol.make_client_capabilities(),
       settings = {
         kotlin = {
@@ -230,29 +257,25 @@ vim.api.nvim_create_autocmd('FileType', {
             },
           },
           diagnostics = {
-            enabled = true,
+            enabled = false,
           },
         },
       },
-      root_dir = vim.fs.dirname(vim.fs.find({ 'build.gradle', 'build.gradle.kts', 'settings.gradle', 'settings.gradle.kts', 'pom.xml', '.git' }, { upward = true })[1] or '.'),
     }
   end,
 })
 
--- Manually start Lua LSP on FileType
 vim.api.nvim_create_autocmd('FileType', {
   pattern = 'lua',
   group = vim.api.nvim_create_augroup('lua-lsp-start', { clear = true }),
   callback = function(event)
     local bufnr = event.buf
     
-    -- Check if already attached
     local clients = vim.lsp.get_clients { bufnr = bufnr }
     if #clients > 0 then
       return
     end
     
-    -- Start lua-language-server
     vim.lsp.start {
       name = 'lua-language-server',
       cmd = { 'lua-language-server' },
@@ -277,7 +300,6 @@ vim.api.nvim_create_autocmd('FileType', {
   end,
 })
 
--- LspAttach autocommand for keymaps (can run at startup)
 vim.api.nvim_create_autocmd('LspAttach', {
   group = vim.api.nvim_create_augroup('kickstart-lsp-attach', { clear = true }),
   callback = function(event)
@@ -310,3 +332,24 @@ vim.api.nvim_create_autocmd('LspAttach', {
     end
   end,
 })
+
+vim.api.nvim_create_user_command('KotlinLspRestart', function()
+  local clients = vim.lsp.get_clients { name = 'kotlin-language-server' }
+  for _, client in ipairs(clients) do
+    vim.lsp.stop_client(client.id)
+  end
+  vim.notify('Kotlin LSP stopped. It will restart on next buffer edit.', vim.log.levels.INFO)
+end, {})
+
+vim.api.nvim_create_user_command('LspStatus', function()
+  local clients = vim.lsp.get_clients()
+  if #clients == 0 then
+    vim.notify('No LSP clients active', vim.log.levels.WARN)
+    return
+  end
+  local status = {}
+  for _, client in ipairs(clients) do
+    table.insert(status, client.name .. ' (ID: ' .. client.id .. ')')
+  end
+  vim.notify('Active LSP clients:\n' .. table.concat(status, '\n'), vim.log.levels.INFO)
+end, {})

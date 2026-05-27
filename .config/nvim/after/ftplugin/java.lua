@@ -16,9 +16,11 @@ vim.schedule(fold_imports)
 
 local jdtls = require('jdtls')
 
-local root_dir = vim.fs.dirname(
-  vim.fs.find({ 'gradlew', 'settings.gradle', 'settings.gradle.kts', '.git', 'mvnw' }, { upward = true })[1]
-)
+local _root = vim.fs.find({ 'gradlew', 'settings.gradle', 'settings.gradle.kts', '.git', 'mvnw' }, { upward = true })
+local root_dir = nil
+if _root and _root[1] then
+  root_dir = vim.fs.dirname(_root[1])
+end
 
 local project_name = vim.fn.fnamemodify(root_dir or vim.fn.getcwd(), ':p:h:t')
 local workspace_dir = vim.fn.stdpath('data') .. '/jdtls-workspace/' .. project_name

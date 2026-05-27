@@ -75,8 +75,8 @@ All keybindings work in **Normal mode**.
 
 | Keybind | Action | Notes |
 |---------|--------|-------|
-| `<F9>` | **Android Debug** | Full build, install, launch & debug cycle |
-| `<leader>dr` | **Android Run** | Build and install without attaching debugger |
+| `<C-F9>` | **Android Debug** | Full build, install, launch & debug cycle |
+| `<F9>` | **Android Run** | Build and install without attaching debugger (also `<leader>dr`) |
 
 ---
 
@@ -94,7 +94,7 @@ Position your cursor on any line of code and press `<leader>b` to set a breakpoi
 
 #### Option A: Full Cycle (Recommended for first run)
 ```
-<F9>
+<Ctrl-F9>
 ```
 Waits for app to build and launch, then attaches automatically.
 
@@ -106,7 +106,7 @@ App must be running and listening on port 5005 (default Android debugger port).
 
 #### Option C: Build and Run Only (no debugger)
 ```
-<leader>dr
+<F9> (or <leader>dr)
 ```
 
 ### 3. During Debugging
