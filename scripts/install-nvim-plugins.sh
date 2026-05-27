@@ -88,6 +88,7 @@ install_plugin "nbehary/android-variant-picker.nvim" "$START_DIR/android-variant
 # Optional plugins (loaded with packadd)
 echo "Installing optional plugins..."
 install_plugin "kdheepak/lazygit.nvim" "$OPT_DIR/lazygit.nvim"
+install_plugin "nbehary/android_project_view" "$OPT_DIR/android_project_view"
 
 # Build steps
 echo "Running build steps..."
