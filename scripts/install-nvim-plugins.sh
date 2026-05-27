@@ -83,6 +83,7 @@ install_plugin "rcarriga/nvim-dap-ui" "$START_DIR/nvim-dap-ui"
 install_plugin "nvim-neotest/nvim-nio" "$START_DIR/nvim-nio"
 install_plugin "kokusenz/delta.lua" "$START_DIR/delta.lua"
 install_plugin "kokusenz/deltaview.nvim" "$START_DIR/deltaview.nvim"
+install_plugin "nbehary/android-variant-picker.nvim" "$START_DIR/android-variant-picker.nvim"
 
 # Optional plugins (loaded with packadd)
 echo "Installing optional plugins..."

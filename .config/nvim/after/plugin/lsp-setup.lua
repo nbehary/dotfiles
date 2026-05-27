@@ -55,6 +55,12 @@ end
 vim.api.nvim_create_autocmd('VimEnter', {
   group = vim.api.nvim_create_augroup('android-lsp-auto-init', { clear = true }),
   callback = function()
+    -- Only auto-init if we are in an actual Gradle project
+    local gradle_marker = vim.fs.find({ 'settings.gradle', 'settings.gradle.kts', 'build.gradle', 'build.gradle.kts' }, { upward = true })[1]
+    if not gradle_marker then
+      return
+    end
+
     local root_dir = find_gradle_root()
     if not root_dir or root_dir == '' or root_dir == '.' then
       return
