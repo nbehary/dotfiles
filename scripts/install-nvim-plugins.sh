@@ -1,30 +1,40 @@
 #!/bin/bash
 # Install/update Neovim plugins using vim.pack
 
-set -e
-
 PACK_DIR="$HOME/.config/nvim/pack/github"
 START_DIR="$PACK_DIR/start"
 OPT_DIR="$PACK_DIR/opt"
 
 # Create directories
-mkdir -p "$START_DIR" "$OPT_DIR"
+mkdir -p "$START_DIR" "$OPT_DIR" || { echo "Error: Failed to create directories." >&2; exit 1; }
+
+# Track failures
+FAILED_PLUGINS=()
 
 # Helper function to clone/update plugin
 install_plugin() {
   local repo=$1
   local dir=$2
   local url=${3:-"https://github.com/$repo.git"}
+  local name
+  name=$(basename "$dir")
   
   if [ -d "$dir" ]; then
-    echo "Updating $(basename $dir)..."
-    cd "$dir"
-    git pull --quiet
-    cd - > /dev/null
+    echo "Updating $name..."
+    if ! (cd "$dir" && git pull --quiet); then
+      echo "✗ Failed to update $name" >&2
+      FAILED_PLUGINS+=("$name")
+      return 1
+    fi
   else
-    echo "Installing $(basename $dir)..."
-    git clone --quiet "$url" "$dir"
+    echo "Installing $name..."
+    if ! git clone --quiet "$url" "$dir"; then
+      echo "✗ Failed to install $name" >&2
+      FAILED_PLUGINS+=("$name")
+      return 1
+    fi
   fi
+  return 0
 }
 
 # Start plugins (loaded automatically)
@@ -71,6 +81,8 @@ install_plugin "stevearc/aerial.nvim" "$START_DIR/aerial.nvim"
 install_plugin "mfussenegger/nvim-dap" "$START_DIR/nvim-dap"
 install_plugin "rcarriga/nvim-dap-ui" "$START_DIR/nvim-dap-ui"
 install_plugin "nvim-neotest/nvim-nio" "$START_DIR/nvim-nio"
+install_plugin "kokusenz/delta.lua" "$START_DIR/delta.lua"
+install_plugin "kokusenz/deltaview.nvim" "$START_DIR/deltaview.nvim"
 
 # Optional plugins (loaded with packadd)
 echo "Installing optional plugins..."
@@ -86,4 +98,17 @@ if command -v make &> /dev/null; then
   cd "$START_DIR/LuaSnip" && make install_jsregexp && cd - > /dev/null && echo "Built LuaSnip" || true
 fi
 
-echo "✓ Plugin installation complete!"
+if [ ${#FAILED_PLUGINS[@]} -ne 0 ]; then
+  echo ""
+  echo "⚠️ Some plugins failed to install or update:"
+  for plugin in "${FAILED_PLUGINS[@]}"; do
+    echo "  - $plugin"
+  done
+  echo ""
+  echo "Please check your network connection or the server status and try again later."
+  exit 1
+else
+  echo ""
+  echo "✓ Plugin installation complete!"
+  exit 0
+fi
