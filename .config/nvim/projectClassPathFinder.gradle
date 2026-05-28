@@ -6,8 +6,27 @@ allprojects { project ->
             System.out.println "kotlin-lsp-project ${project.name}"
 
             if (project.hasProperty('android')) {
-                project.android.getBootClasspath().each {
-                    System.out.println "kotlin-lsp-gradle $it"
+                // AGP 9+ removed getBootClasspath(). Resolve android.jar directly from SDK.
+                def localPropsFile = new File(project.rootDir, 'local.properties')
+                def sdkDir = null
+                if (localPropsFile.exists()) {
+                    def props = new Properties()
+                    props.load(localPropsFile.newInputStream())
+                    sdkDir = props.getProperty('sdk.dir')
+                }
+                if (!sdkDir) sdkDir = System.getenv('ANDROID_HOME') ?: System.getenv('ANDROID_SDK_ROOT')
+                if (sdkDir) {
+                    def compileSdk = project.android.compileSdk
+                    def platformsDir = new File("${sdkDir}/platforms")
+                    // Match android-37 or android-37.0 style directory names
+                    def platformDir = platformsDir.listFiles()?.find { dir ->
+                        dir.name == "android-${compileSdk}" || dir.name.startsWith("android-${compileSdk}.")
+                    }
+                    if (platformDir) {
+                        platformDir.eachFileMatch(~/.*\.jar/) { jarFile ->
+                            System.out.println "kotlin-lsp-gradle ${jarFile.absolutePath}"
+                        }
+                    }
                 }
 
                 def variants = []
@@ -46,8 +65,19 @@ allprojects { project ->
 
                     System.out.println "kotlin-lsp-gradle $userVariantClasses"
 
-                    variant.getCompileClasspath().each {
-                        System.out.println "kotlin-lsp-gradle $it"
+                    // AGP 9+ removed variant.getCompileClasspath(); fall back to configuration
+                    try {
+                        variant.getCompileClasspath().each {
+                            System.out.println "kotlin-lsp-gradle $it"
+                        }
+                    } catch (Exception ignored) {
+                        try {
+                            project.configurations
+                                .findByName("${variant.name}CompileClasspath")
+                                ?.resolvedConfiguration?.resolvedArtifacts?.each { artifact ->
+                                    System.out.println "kotlin-lsp-gradle ${artifact.file.absolutePath}"
+                                }
+                        } catch (Exception ignored2) { /* best effort */ }
                     }
                 }
             } else if (project.hasProperty('sourceSets')) {

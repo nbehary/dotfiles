@@ -31,7 +31,7 @@ if [ ! -f "\$FINDER_SCRIPT" ]; then
 fi
 
 # Run gradle to extract the classpath, filter, and join with colons
-./gradlew -I "\$FINDER_SCRIPT" :kotlinLSPProjectDeps --quiet 2>/dev/null | \\
+./gradlew -I "\$FINDER_SCRIPT" kotlinLSPProjectDeps --quiet --no-configuration-cache 2>/dev/null | \\
     grep '^kotlin-lsp-gradle ' | \\
     cut -d' ' -f2- | \\
     paste -sd ":" -
@@ -40,8 +40,20 @@ EOF
 chmod +x kls-classpath
 echo "✓ Created kls-classpath and made it executable."
 
+# Patch the KLS jar for AGP 9 compatibility (idempotent — safe to run multiple times)
+PATCH_SCRIPT="$HOME/.config/nvim/kls-patch-agp9.sh"
+if [ -f "$PATCH_SCRIPT" ]; then
+    echo ""
+    echo "Applying AGP 9 patch to kotlin-language-server jar..."
+    bash "$PATCH_SCRIPT"
+else
+    echo ""
+    echo "⚠ KLS jar patch script not found at $PATCH_SCRIPT"
+    echo "  If using AGP 9+, run the patch manually to fix getBootClasspath() errors."
+fi
+
 echo ""
 echo "To finish setup:"
 echo "1. Run a full Gradle build if you haven't recently:"
 echo "   ./gradlew assembleDebug"
-echo "2. Open Neovim and run :LspRestart to reload the Kotlin Language Server."
+echo "2. Restart Neovim fully (not just :LspRestart) for the jar patch to take effect."

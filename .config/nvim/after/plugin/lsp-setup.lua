@@ -163,6 +163,15 @@ vim.api.nvim_create_autocmd('VimEnter', {
       jdtls.start_or_attach(jdtls_config)
     end
 
+    -- Only start KLS from VimEnter if we have a real named file buffer.
+    -- Attaching to an unnamed buffer sends textDocument/didOpen with uri "file://"
+    -- which crashes KLS. The FileType autocmd handles starting KLS for actual .kt files.
+    local bufname = vim.api.nvim_buf_get_name(0)
+    local buftype = vim.api.nvim_get_option_value('buftype', { buf = 0 })
+    if bufname == '' or buftype ~= '' then
+      return
+    end
+
     local kls_jdk = find_jdk()
     local kls_env = nil
     if kls_jdk then
