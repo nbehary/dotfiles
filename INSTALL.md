@@ -105,14 +105,65 @@ Verify that the following are fully operational:
 
 ## ☕ Optional: Gradle & Kotlin LSP Support
 
-If you develop Kotlin or Java Gradle applications, you can enable modern project-level LSP features (correct class indexing, workspace symbol search, definitions) using our custom Kotlin setup script:
+If you develop Kotlin or Java Android/Gradle projects, an additional one-time machine setup and a per-project step are required to get the Kotlin Language Server (KLS) working correctly.
+
+### One-time machine setup
+
+Run the setup script from the dotfiles root:
 
 ```bash
-# Set up and configure Kotlin LSP support
-./scripts/setup-kotlin-lsp.sh --full
+./scripts/setup-kotlin-lsp.sh
 ```
 
-This will automatically configure custom FileType autocommands, build workspace roots using your build/settings Gradle files, and wire LSPs to trigger cleanly. See [KOTLIN_LSP_SKILL.md](file:///home/nate/working_dotfiles/scripts/KOTLIN_LSP_SKILL.md) for more details.
+This will:
+1. Install `kotlin-language-server` via Homebrew (if not already installed)
+2. Patch the KLS shared jar for **AGP 9 compatibility** — the bundled Gradle init script
+   uses APIs removed in AGP 9 (`getBootClasspath()`, `getCompileClasspath()`). The patch
+   replaces them with correct AGP 9 equivalents and fixes variant classpath resolution.
+3. Verify that all required dotfiles are in place
+
+> [!IMPORTANT]
+> Re-run `./scripts/setup-kotlin-lsp.sh --patch` after any `brew upgrade kotlin-language-server`,
+> as Homebrew will overwrite the patched jar.
+
+### Per-project setup (Android projects)
+
+In the root directory of each Android project, run:
+
+```bash
+android-kls-setup
+```
+
+This creates an executable `kls-classpath` script that KLS uses to resolve the project's
+compile classpath (all library JARs, inter-module dependencies, `android.jar`, etc.).
+It also re-applies the AGP 9 jar patch in case it was lost.
+
+The generated `kls-classpath` file should be committed to the project repository so
+other developers get correct KLS support automatically.
+
+### What's in the dotfiles
+
+| File | Purpose |
+|------|---------|
+| `.config/nvim/projectClassPathFinder.gradle` | Gradle init script used by `kls-classpath` to extract compile classpath. AGP 9 compatible. |
+| `.config/nvim/kls-patch-agp9.sh` | Idempotent script to patch the KLS jar. Safe to run multiple times. |
+| `.config/nvim/after/plugin/lsp-setup.lua` | Neovim LSP configuration for KLS, JDTLS, and Lua LSP. Includes AGP 9 crash guards. |
+| `.config/nvim/after/ftplugin/kotlin.lua` | Kotlin filetype settings. |
+| `bin/android-kls-setup` | Per-project script that generates `kls-classpath` and patches the KLS jar. |
+
+### Troubleshooting
+
+**KLS not providing completions / showing errors on every line:**
+Check `~/.local/state/nvim/lsp.log` for errors. Common causes:
+- `kls-classpath` not present in project root → run `android-kls-setup`
+- KLS jar not patched → run `./scripts/setup-kotlin-lsp.sh --patch`
+- Project not built yet → run `./gradlew assembleDebug` first (needed to generate AAR transforms in Gradle cache)
+
+**After `brew upgrade kotlin-language-server`:**
+```bash
+./scripts/setup-kotlin-lsp.sh --patch
+```
+Then fully restart Neovim (not just `:LspRestart`).
 
 ---
 

@@ -23,62 +23,41 @@ allprojects { project ->
                         dir.name == "android-${compileSdk}" || dir.name.startsWith("android-${compileSdk}.")
                     }
                     if (platformDir) {
-                        platformDir.eachFileMatch(~/.*\.jar/) { jarFile ->
-                            System.out.println "kotlin-lsp-gradle ${jarFile.absolutePath}"
+                        // Only include android.jar — not android-stubs-src.jar (sources, not bytecode),
+                        // not core-for-system-modules.jar or uiautomator.jar (unneeded/can corrupt classpath)
+                        def androidJar = new File(platformDir, "android.jar")
+                        if (androidJar.exists()) {
+                            System.out.println "kotlin-lsp-gradle ${androidJar.absolutePath}"
                         }
                     }
                 }
 
-                def variants = []
+                // AGP 9 made libraryVariants/applicationVariants lazy — they return empty at task
+                // execution time. Instead, scan configurations directly by name pattern.
+                // This works for both simple modules (debugCompileClasspath) and multi-flavor
+                // modules (firebaseCtDebugCompileClasspath, etc.)
+                def debugConfigs = project.configurations.findAll { cfg ->
+                    cfg.canBeResolved &&
+                    cfg.name.toLowerCase().endsWith('compileclasspath') &&
+                    cfg.name.toLowerCase().contains('debug') &&
+                    !cfg.name.toLowerCase().contains('test')
+                }.toList().sort { it.name }
 
-                if (project.android.hasProperty('applicationVariants')) {
-                    variants += project.android.applicationVariants
-                }
-
-                if (project.android.hasProperty('libraryVariants')) {
-                    variants += project.android.libraryVariants
-                }
-
-                variants.each { variant ->
-                    def variantBase = variant.baseName.replaceAll("-", File.separator)
-
-                    def buildClasses = project.getBuildDir().absolutePath +
-                        File.separator + "intermediates" +
-                        File.separator + variantBase +
-                        File.separator + "classes"
-
-                    System.out.println "kotlin-lsp-gradle $buildClasses"
-
-                    def userClasses = project.getBuildDir().absolutePath +
-                        File.separator + "intermediates" +
-                        File.separator + "javac" +
-                        File.separator + variantBase +
-                        File.separator + "compile" + variantBase.capitalize() + "JavaWithJavac" + File.separator + "classes"
-
-                    System.out.println "kotlin-lsp-gradle $userClasses"
-
-                    def userVariantClasses = project.getBuildDir().absolutePath +
-                        File.separator + "intermediates" +
-                        File.separator + "javac" +
-                        File.separator + variantBase +
-                        File.separator + "classes"
-
-                    System.out.println "kotlin-lsp-gradle $userVariantClasses"
-
-                    // AGP 9+ removed variant.getCompileClasspath(); fall back to configuration
+                if (!debugConfigs.isEmpty()) {
                     try {
-                        variant.getCompileClasspath().each {
-                            System.out.println "kotlin-lsp-gradle $it"
+                        // Use lenient artifactView with android-classes-jar type:
+                        // - handles AARs (extracts classes from each AAR via Gradle transforms)
+                        // - handles inter-module deps (uses the module's compile jar)
+                        // - lenient = true skips any unresolvable artifacts
+                        debugConfigs[0].incoming.artifactView { viewConfig ->
+                            viewConfig.lenient = true
+                            viewConfig.attributes {
+                                it.attribute(Attribute.of('artifactType', String.class), 'android-classes-jar')
+                            }
+                        }.artifacts.artifactFiles.files.each { file ->
+                            System.out.println "kotlin-lsp-gradle ${file.absolutePath}"
                         }
-                    } catch (Exception ignored) {
-                        try {
-                            project.configurations
-                                .findByName("${variant.name}CompileClasspath")
-                                ?.resolvedConfiguration?.resolvedArtifacts?.each { artifact ->
-                                    System.out.println "kotlin-lsp-gradle ${artifact.file.absolutePath}"
-                                }
-                        } catch (Exception ignored2) { /* best effort */ }
-                    }
+                    } catch (Exception ignored) { /* best effort */ }
                 }
             } else if (project.hasProperty('sourceSets')) {
                 // Print the list of all dependencies jar files.
