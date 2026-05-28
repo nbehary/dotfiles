@@ -190,17 +190,16 @@ vim.api.nvim_create_autocmd('VimEnter', {
               enabled = true,
             },
           },
-          -- Disable LSP diagnostics (unreliable with false positives)
-          -- Use ktlint via conform for reliable diagnostics instead
+          -- Enable LSP diagnostics
           diagnostics = {
-            enabled = false,
+            enabled = true,
           },
         },
       },
     })
 
     vim.schedule(function()
-      vim.notify('Android project detected. Java (JDTLS) and Kotlin LSPs initializing... Kotlin LSP diagnostics disabled (ktlint for linting)', vim.log.levels.INFO)
+      vim.notify('Android project detected. Java (JDTLS) and Kotlin LSPs initializing...', vim.log.levels.INFO)
     end)
   end,
   once = true,
@@ -265,7 +264,7 @@ vim.api.nvim_create_autocmd('FileType', {
             },
           },
           diagnostics = {
-            enabled = false,
+            enabled = true,
           },
         },
       },
