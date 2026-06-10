@@ -82,6 +82,7 @@ local config = {
           { name = 'JavaSE-21', path = jdk_home, default = true },
         },
       },
+      maxConcurrentBuilds = 1,
     },
   },
   init_options = {
@@ -106,4 +107,6 @@ local config = {
   end,
 }
 
-jdtls.start_or_attach(config)
+-- jdtls disabled for testing (high CPU usage). KLS provides basic Java support.
+-- To re-enable: uncomment the line below
+-- jdtls.start_or_attach(config)

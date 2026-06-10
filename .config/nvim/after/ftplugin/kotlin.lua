@@ -21,11 +21,10 @@ vim.opt_local.shiftwidth = 4
 vim.opt_local.softtabstop = 4
 vim.opt_local.expandtab = true
 
--- Setup android-variant-picker plugin keymaps dynamically
+-- Setup android-variant-picker plugin keymaps dynamically (silent on subsequent loads)
 local ok, picker = pcall(require, 'android-variant-picker')
-if ok then
+if ok and picker and picker.register_keymaps then
   picker.register_keymaps(0)
-else
-  vim.notify('android-variant-picker plugin not loaded. Run scripts/install-nvim-plugins.sh to install.', vim.log.levels.WARN)
 end
+
 

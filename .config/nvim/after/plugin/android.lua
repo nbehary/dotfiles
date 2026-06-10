@@ -8,8 +8,10 @@ if ok then
     },
   })
   
-  -- Bind only the logcat part to <leader>al
-  vim.keymap.set('n', '<leader>al', '<cmd>AndroidLogcat<CR>', { desc = 'Android Logcat (plugin)' })
+  -- Android keymaps
+  vim.keymap.set('n', '<leader>am', '<cmd>AndroidMenu<CR>', { desc = 'Android Menu' })
+  vim.keymap.set('n', '<leader>aa', '<cmd>AndroidActions<CR>', { desc = 'Android Actions (ADB)' })
+  vim.keymap.set('n', '<leader>al', '<cmd>AndroidLogcat<CR>', { desc = 'Android Logcat' })
 else
   vim.notify('android-nvim-plugin not loaded.', vim.log.levels.WARN)
 end

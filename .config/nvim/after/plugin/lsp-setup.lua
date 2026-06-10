@@ -95,73 +95,7 @@ vim.api.nvim_create_autocmd('VimEnter', {
     end
     jdk_home = jdk_home or os.getenv('JAVA_HOME') or '/usr/lib/jvm/java-21-openjdk'
 
-    local jdtls_ok, jdtls = pcall(require, 'jdtls')
-    if jdtls_ok and jdtls then
-      local project_name = vim.fn.fnamemodify(root_dir, ':p:h:t')
-      local workspace_dir = vim.fn.stdpath('data') .. '/jdtls-workspace/' .. project_name
-
-      local bundles = vim.split(
-        vim.fn.glob(vim.fn.stdpath('data') .. '/mason/packages/java-debug-adapter/extension/server/com.microsoft.java.debug.plugin-*.jar', true),
-        '\n',
-        { trimempty = true }
-      )
-
-      local cmp_ok2, cmp_nvim_lsp = pcall(require, 'cmp_nvim_lsp')
-      local jdtls_capabilities = vim.lsp.protocol.make_client_capabilities()
-      if cmp_ok2 and cmp_nvim_lsp and cmp_nvim_lsp.default_capabilities then
-        jdtls_capabilities = vim.tbl_deep_extend('force', jdtls_capabilities, cmp_nvim_lsp.default_capabilities())
-      end
-
-      local extendedClientCapabilities = jdtls.extendedClientCapabilities
-      extendedClientCapabilities.resolveAdditionalTextEditsSupport = true
-
-      local jdtls_config = {
-        cmd = {
-          vim.fn.expand('~/.local/share/nvim/mason/bin/jdtls'),
-          '--java-executable', java_cmd,
-          '-data', workspace_dir,
-        },
-        root_dir = root_dir,
-        capabilities = jdtls_capabilities,
-        settings = {
-          java = {
-            signatureHelp = { enabled = true },
-            contentProvider = { preferred = 'fernflower' },
-            completion = {
-              favoriteStaticMembers = {
-                'org.junit.Assert.*',
-                'org.junit.jupiter.api.Assertions.*',
-                'org.mockito.Mockito.*',
-                'io.mockk.MockKKt.*',
-              },
-              filteredTypes = {
-                'com.sun.*', 'io.micrometer.shaded.*', 'java.awt.*', 'jdk.*', 'sun.*',
-              },
-            },
-            sources = {
-              organizeImports = { starThreshold = 9999, staticStarThreshold = 9999 },
-            },
-            codeGeneration = {
-              toString = {
-                template = '${object.className}{${member.name()}=${member.value}, ${otherMembers}}',
-              },
-              useBlocks = true,
-            },
-            configuration = {
-              runtimes = {
-                { name = 'JavaSE-21', path = jdk_home, default = true },
-              },
-            },
-          },
-        },
-        init_options = {
-          bundles = bundles,
-          extendedClientCapabilities = extendedClientCapabilities,
-        },
-      }
-
-      jdtls.start_or_attach(jdtls_config)
-    end
+    -- jdtls is started in after/ftplugin/java.lua; skip duplicate initialization here
 
     -- Only start KLS from VimEnter if we have a real named file buffer.
     -- Attaching to an unnamed buffer sends textDocument/didOpen with uri "file://"
@@ -172,44 +106,8 @@ vim.api.nvim_create_autocmd('VimEnter', {
       return
     end
 
-    local kls_jdk = find_jdk()
-    local kls_env = nil
-    if kls_jdk then
-      kls_env = { JAVA_HOME = kls_jdk, PATH = kls_jdk .. '/bin:' .. (vim.env.PATH or '') }
-    end
-
-    vim.lsp.start({
-      name = 'kotlin-language-server',
-      cmd = { 'kotlin-language-server' },
-      cmd_env = kls_env,
-      root_dir = root_dir,
-      capabilities = vim.lsp.protocol.make_client_capabilities(),
-      settings = {
-        kotlin = {
-          compiler = {
-            jvm = {
-              target = '21',
-            },
-          },
-          linting = {
-            enabled = true,
-          },
-          completion = {
-            snippets = {
-              enabled = true,
-            },
-          },
-          -- Enable LSP diagnostics
-          diagnostics = {
-            enabled = true,
-          },
-        },
-      },
-    })
-
-    vim.schedule(function()
-      vim.notify('Android project detected. Java (JDTLS) and Kotlin LSPs initializing...', vim.log.levels.INFO)
-    end)
+    -- KLS disabled: causes -32603 internal errors on second file and unstable highlighting
+    -- Tree-sitter provides reliable syntax highlighting across all files
   end,
   once = true,
 })
@@ -219,12 +117,16 @@ vim.api.nvim_create_autocmd('FileType', {
   group = vim.api.nvim_create_augroup('kotlin-lsp-start', { clear = true }),
   callback = function(event)
     local bufnr = event.buf
-    
-    local clients = vim.lsp.get_clients { bufnr = bufnr }
-    if #clients > 0 then
-      return
+    local root_dir = find_gradle_root()
+
+    -- Reuse existing KLS client for this project root — never start a second instance
+    for _, client in ipairs(vim.lsp.get_clients()) do
+      if client.name == 'kotlin-language-server' and client.config.root_dir == root_dir then
+        vim.lsp.buf_attach_client(bufnr, client.id)
+        return
+      end
     end
-    
+
     local function find_jdk()
       local candidates = {
         os.getenv('KOTLIN_LSP_JDK'),
@@ -242,38 +144,39 @@ vim.api.nvim_create_autocmd('FileType', {
       end
       return nil
     end
-    local kls_jdk = find_jdk()
-    local kls_env = nil
-    if kls_jdk then
-      kls_env = { JAVA_HOME = kls_jdk, PATH = kls_jdk .. '/bin:' .. (vim.env.PATH or '') }
-    end
 
-    local root_dir = find_gradle_root()
+    local kls_jdk = find_jdk()
+    local storage_dir = vim.fn.stdpath('data') .. '/kls-workspace/' .. vim.fn.fnamemodify(root_dir, ':t')
+    local kls_env = {
+      -- Reduced to 512m to leave room for Gradle builds (4.5GB+)
+      KOTLIN_LANGUAGE_SERVER_OPTS = '-Xmx512m -Xss2m -XX:+UseG1GC -XX:MaxGCPauseMillis=200',
+    }
+    if kls_jdk then
+      kls_env.JAVA_HOME = kls_jdk
+      kls_env.PATH = kls_jdk .. '/bin:' .. (vim.env.PATH or '')
+    end
 
     vim.lsp.start {
       name = 'kotlin-language-server',
       cmd = { 'kotlin-language-server' },
       cmd_env = kls_env,
-      bufnr = bufnr,
+      reuse_client = function(client, config)
+        return client.name == config.name and client.config.root_dir == config.root_dir
+      end,
       root_dir = root_dir,
       capabilities = vim.lsp.protocol.make_client_capabilities(),
       settings = {
         kotlin = {
           compiler = {
-            jvm = {
-              target = '21',
-            },
+            jvm = { target = '21' },
           },
-          linting = {
-            enabled = true,
-          },
-          completion = {
-            snippets = {
-              enabled = true,
-            },
-          },
-          diagnostics = {
-            enabled = true,
+          linting = { enabled = false },
+          completion = { snippets = { enabled = false } },
+          diagnostics = { enabled = false },
+          debounceTime = 2000,
+          workspace = {
+            -- Per-project cache dir prevents re-analysing classpath on each file open
+            storagePath = storage_dir,
           },
         },
       },
@@ -323,12 +226,24 @@ vim.api.nvim_create_autocmd('LspAttach', {
       vim.keymap.set('n', keys, func, { buffer = event.buf, desc = 'LSP: ' .. desc })
     end
 
-    map('gd', require('telescope.builtin').lsp_definitions, '[G]oto [D]efinition')
-    map('gr', require('telescope.builtin').lsp_references, '[G]oto [R]eferences')
-    map('gI', require('telescope.builtin').lsp_implementations, '[G]oto [I]mplementation')
-    map('<leader>D', require('telescope.builtin').lsp_type_definitions, 'Type [D]efinition')
-    map('<leader>ds', require('telescope.builtin').lsp_document_symbols, '[D]ocument [S]ymbols')
-    map('<leader>ws', require('telescope.builtin').lsp_dynamic_workspace_symbols, '[W]orkspace [S]ymbols')
+    -- Lazy telescope wrapper: falls back to vim.lsp.buf if telescope isn't ready
+    local function tele(method, fallback)
+      return function()
+        local ok, builtin = pcall(require, 'telescope.builtin')
+        if ok then
+          builtin[method]()
+        else
+          fallback()
+        end
+      end
+    end
+
+    map('gd', tele('lsp_definitions', vim.lsp.buf.definition), '[G]oto [D]efinition')
+    map('gr', tele('lsp_references', vim.lsp.buf.references), '[G]oto [R]eferences')
+    map('gI', tele('lsp_implementations', vim.lsp.buf.implementation), '[G]oto [I]mplementation')
+    map('<leader>D', tele('lsp_type_definitions', vim.lsp.buf.type_definition), 'Type [D]efinition')
+    map('<leader>ds', tele('lsp_document_symbols', vim.lsp.buf.document_symbol), '[D]ocument [S]ymbols')
+    map('<leader>ws', tele('lsp_dynamic_workspace_symbols', vim.lsp.buf.workspace_symbol), '[W]orkspace [S]ymbols')
     map('<leader>rn', vim.lsp.buf.rename, '[R]e[n]ame')
     map('<leader>ca', vim.lsp.buf.code_action, '[C]ode [A]ction')
     map('K', vim.lsp.buf.hover, 'Hover Documentation')

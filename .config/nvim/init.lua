@@ -90,6 +90,8 @@ vim.keymap.set({ 'n', 'v' }, '<leader>Gf', '<cmd>GradleFavorites<cr>', { desc = 
 -- [[ Diagnostic keybindings ]]
 vim.keymap.set('n', '<leader>dw', vim.diagnostic.open_float, { desc = 'Open diagnostics' })
 vim.keymap.set('n', '<leader>dq', vim.diagnostic.setloclist, { desc = 'Diagnostics to loclist' })
+vim.keymap.set('n', '<leader>dd', function() vim.diagnostic.enable(false, 0) end, { desc = 'Hide diagnostics' })
+vim.keymap.set('n', '<leader>de', function() vim.diagnostic.enable(true, 0) end, { desc = 'Show diagnostics' })
 vim.keymap.set('n', ']d', vim.diagnostic.goto_next, { desc = 'Next diagnostic' })
 vim.keymap.set('n', '[d', vim.diagnostic.goto_prev, { desc = 'Prev diagnostic' })
 vim.keymap.set('n', ']e', function()
@@ -176,6 +178,30 @@ vim.api.nvim_create_autocmd('InsertLeave', {
   callback = function()
     if vim.bo.modified and vim.bo.buftype == '' and vim.api.nvim_buf_get_name(0) ~= '' and not vim.bo.readonly then
       vim.cmd('silent! update')
+    end
+  end,
+})
+
+-- Diagnostics: hide on file open, show after save
+vim.api.nvim_create_augroup('DiagnosticsAutoToggle', { clear = true })
+vim.api.nvim_create_autocmd({ 'BufRead', 'BufNew' }, {
+  group = 'DiagnosticsAutoToggle',
+  pattern = '*',
+  callback = function(args)
+    local buftype = vim.bo[args.buf].buftype
+    -- Only disable diagnostics for normal file buffers, not special ones
+    if buftype == '' and vim.diagnostic then
+      vim.diagnostic.enable(false, { bufnr = args.buf })
+    end
+  end,
+})
+vim.api.nvim_create_autocmd('BufWritePost', {
+  group = 'DiagnosticsAutoToggle',
+  pattern = '*',
+  callback = function(args)
+    local buftype = vim.bo[args.buf].buftype
+    if buftype == '' and vim.diagnostic then
+      vim.diagnostic.enable(true, { bufnr = args.buf })
     end
   end,
 })
