@@ -40,7 +40,8 @@ install_plugin() {
 # Start plugins (loaded automatically)
 echo "Installing start plugins..."
 install_plugin "tpope/vim-sleuth" "$START_DIR/vim-sleuth"
-install_plugin "github/copilot.vim" "$START_DIR/copilot.vim"
+install_plugin "coder/claudecode.nvim" "$START_DIR/claudecode.nvim"
+install_plugin "olimorris/codecompanion.nvim" "$START_DIR/codecompanion.nvim"
 install_plugin "Tetralux/odin.vim" "$START_DIR/odin.vim"
 install_plugin "folke/edgy.nvim" "$START_DIR/edgy.nvim"
 install_plugin "numToStr/Comment.nvim" "$START_DIR/Comment.nvim"

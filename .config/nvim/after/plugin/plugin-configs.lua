@@ -201,16 +201,15 @@ vim.api.nvim_create_autocmd('VimEnter', {
       require('fidget').setup()
     end)
 
-    -- CopilotChat Configuration
+    -- CodeCompanion Configuration (chat backed by Claude Code via ACP)
+    -- Requires: npm install -g @zed-industries/claude-agent-acp
     pcall(function()
-      require('CopilotChat').setup()
-      vim.keymap.set('n', '<leader>ai', ':CopilotChat<cr>', { desc = 'CopilotChat' })
-      vim.keymap.set('v', '<leader>ai', ':CopilotChat<cr>', { desc = 'CopilotChat' })
-    end)
-
-    -- CodeCompanion Configuration
-    pcall(function()
-      require('codecompanion').setup()
+      require('codecompanion').setup {
+        interactions = {
+          chat = { adapter = 'claude_code' },
+          inline = { adapter = 'claude_code' },
+        },
+      }
       vim.keymap.set('n', '<leader>cc', '<cmd>CodeCompanionChat<cr>', { desc = '[C]ode[C]ompanion Chat' })
       vim.keymap.set('v', '<leader>cc', '<cmd>CodeCompanionChat<cr>', { desc = '[C]ode[C]ompanion Chat' })
       vim.keymap.set('n', '<leader>ca', '<cmd>CodeCompanionActions<cr>', { desc = '[C]ode[C]ompanion [A]ctions' })

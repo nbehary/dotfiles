@@ -26,9 +26,9 @@ Everything is covered by the Cheat Sheet, but here are some highlights (first 2 
 - When you first open an Android (gradle) project, it will scan the build configs and let you choose which you want to build with. Use `<leader>gf` for changing it later.
 - Harpoon and Telescope are amazing, use them (really Telescope makes the first plugin useless).
 
-There is no good plugin that integrates an AI chat available for Copilot, or Claude Code, or Gemini/Antigravity. I use a floaterm (`<leader>;`) with whatever CLI I'm using running inside it.
+Claude Code is integrated via claudecode.nvim, which speaks the same IDE protocol as the official VS Code extension: `<leader>ai` toggles the Claude terminal, `<leader>as` sends a visual selection (or adds the current file / the file under the cursor in nvim-tree/oil) to its context, and proposed edits open as native diffs you accept with `<leader>ay` or deny with `<leader>an`. CodeCompanion (`<leader>cc`) gives a chat buffer backed by Claude Code over ACP — it needs `npm install -g @zed-industries/claude-agent-acp`. A plain floaterm (`<leader>;`) with the `claude` CLI still works too.
 
-There is Copilot-backed completion though. `<C-u>` accepts. You don't want Tab, trust me (it's why the regular LSP comp accept is `<C-y>`).
+There is no Claude equivalent of Copilot's ghost-text inline completion — regular LSP completion via nvim-cmp covers that (`<C-y>` accepts).
 
 Any LLM, at any level, is really, really good at working with Neovim configs. If you have issues, they will probably be able to help.
 

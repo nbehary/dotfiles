@@ -13,7 +13,7 @@ vim.g.maplocalleader = ' '
 -- Point Neovim at the dedicated pynvim virtualenv (avoids Homebrew PEP 668 restriction)
 vim.g.python3_host_prog = vim.fn.expand '~/.venv/nvim/bin/python3'
 
--- Start listening on /tmp/nvim socket for MCP servers (Claude Desktop, Copilot CLI)
+-- Start listening on /tmp/nvim socket for MCP servers (Claude Desktop, Claude Code)
 -- Remove stale socket file, then start; silently skip if another instance owns it
 local nvim_sock = '/tmp/nvim'
 if vim.uv.fs_stat(nvim_sock) then

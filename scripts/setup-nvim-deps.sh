@@ -294,6 +294,11 @@ These need a working JDK to run — ensure `java` is on PATH before launching nv
 
 Treesitter parsers (auto on first nvim launch): kotlin, java, groovy, xml, toml, lua, markdown, json, yaml
 These need a C compiler — handled by installing `gcc`/`build-essential`/Xcode CLT.
+
+Claude Code integration:
+  claude            — the Claude Code CLI, needed by claudecode.nvim (https://claude.com/claude-code)
+  claude-agent-acp  — ACP bridge for CodeCompanion's claude_code adapter:
+                      npm install -g @zed-industries/claude-agent-acp
 EOF
 }
 
