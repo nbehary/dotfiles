@@ -1,6 +1,17 @@
 -- LSP Configuration
 -- Defer setup until plugins are available
 
+-- Completion-capable capabilities for every vim.lsp.start in this file.
+-- cmp_nvim_lsp adds snippetSupport, resolve capabilities, etc.
+local function lsp_capabilities()
+  local capabilities = vim.lsp.protocol.make_client_capabilities()
+  local cmp_ok, cmp_nvim_lsp = pcall(require, 'cmp_nvim_lsp')
+  if cmp_ok and cmp_nvim_lsp and cmp_nvim_lsp.default_capabilities then
+    capabilities = vim.tbl_deep_extend('force', capabilities, cmp_nvim_lsp.default_capabilities())
+  end
+  return capabilities
+end
+
 vim.api.nvim_create_autocmd('VimEnter', {
   group = vim.api.nvim_create_augroup('lsp-setup-defer', { clear = true }),
   callback = function()
@@ -11,12 +22,6 @@ vim.api.nvim_create_autocmd('VimEnter', {
     end
     mason.setup()
 
-    local capabilities = vim.lsp.protocol.make_client_capabilities()
-    local cmp_ok, cmp_nvim_lsp = pcall(require, 'cmp_nvim_lsp')
-    if cmp_ok and cmp_nvim_lsp and cmp_nvim_lsp.default_capabilities then
-      capabilities = vim.tbl_deep_extend('force', capabilities, cmp_nvim_lsp.default_capabilities())
-    end
-
     local mti_ok, mti = pcall(require, 'mason-tool-installer')
     if mti_ok and mti.setup then
       mti.setup {
@@ -24,6 +29,7 @@ vim.api.nvim_create_autocmd('VimEnter', {
           'ktlint',
           'jdtls',
           'stylua',
+          'lua-language-server',
           'java-debug-adapter',
           'kotlin-debug-adapter',
         },
@@ -68,8 +74,8 @@ vim.api.nvim_create_autocmd('VimEnter', {
 
     local function find_jdk()
       local candidates = {
-        os.getenv('KOTLIN_LSP_JDK'),
-        vim.fn.expand('~/android-studio/jbr'),
+        os.getenv 'KOTLIN_LSP_JDK',
+        vim.fn.expand '~/android-studio/jbr',
         '/opt/android-studio/jbr',
         '/usr/lib/jvm/java-21-openjdk',
         '/usr/lib/jvm/java-17-openjdk',
@@ -86,14 +92,14 @@ vim.api.nvim_create_autocmd('VimEnter', {
 
     local jdk_home = find_jdk()
     local java_cmd = 'java'
-    for _, dir in ipairs({ vim.fn.expand('~/android-studio'), '/opt/android-studio' }) do
+    for _, dir in ipairs { vim.fn.expand '~/android-studio', '/opt/android-studio' } do
       if vim.fn.executable(dir .. '/jbr/bin/java') == 1 then
         java_cmd = dir .. '/jbr/bin/java'
         jdk_home = dir .. '/jbr'
         break
       end
     end
-    jdk_home = jdk_home or os.getenv('JAVA_HOME') or '/usr/lib/jvm/java-21-openjdk'
+    jdk_home = jdk_home or os.getenv 'JAVA_HOME' or '/usr/lib/jvm/java-21-openjdk'
 
     -- jdtls is started in after/ftplugin/java.lua; skip duplicate initialization here
 
@@ -129,8 +135,8 @@ vim.api.nvim_create_autocmd('FileType', {
 
     local function find_jdk()
       local candidates = {
-        os.getenv('KOTLIN_LSP_JDK'),
-        vim.fn.expand('~/android-studio/jbr'),
+        os.getenv 'KOTLIN_LSP_JDK',
+        vim.fn.expand '~/android-studio/jbr',
         '/opt/android-studio/jbr',
         '/usr/lib/jvm/java-21-openjdk',
         '/usr/lib/jvm/java-17-openjdk',
@@ -146,7 +152,7 @@ vim.api.nvim_create_autocmd('FileType', {
     end
 
     local kls_jdk = find_jdk()
-    local storage_dir = vim.fn.stdpath('data') .. '/kls-workspace/' .. vim.fn.fnamemodify(root_dir, ':t')
+    local storage_dir = vim.fn.stdpath 'data' .. '/kls-workspace/' .. vim.fn.fnamemodify(root_dir, ':t')
     local kls_env = {
       -- Reduced to 512m to leave room for Gradle builds (4.5GB+)
       KOTLIN_LANGUAGE_SERVER_OPTS = '-Xmx512m -Xss2m -XX:+UseG1GC -XX:MaxGCPauseMillis=200',
@@ -164,7 +170,7 @@ vim.api.nvim_create_autocmd('FileType', {
         return client.name == config.name and client.config.root_dir == config.root_dir
       end,
       root_dir = root_dir,
-      capabilities = vim.lsp.protocol.make_client_capabilities(),
+      capabilities = lsp_capabilities(),
       settings = {
         kotlin = {
           compiler = {
@@ -189,17 +195,30 @@ vim.api.nvim_create_autocmd('FileType', {
   group = vim.api.nvim_create_augroup('lua-lsp-start', { clear = true }),
   callback = function(event)
     local bufnr = event.buf
-    
+
     local clients = vim.lsp.get_clients { bufnr = bufnr }
     if #clients > 0 then
       return
     end
-    
+
+    -- Mason's bin dir is only prepended to PATH by mason.setup() at VimEnter,
+    -- but this FileType autocmd fires *before* VimEnter for files opened from
+    -- the command line — resolve the absolute path so the spawn never fails.
+    local lls_cmd = 'lua-language-server'
+    if vim.fn.executable(lls_cmd) ~= 1 then
+      local mason_lls = vim.fn.stdpath 'data' .. '/mason/bin/lua-language-server'
+      if vim.fn.executable(mason_lls) == 1 then
+        lls_cmd = mason_lls
+      else
+        return -- not installed yet (mason-tool-installer will fetch it); avoid a spawn error
+      end
+    end
+
     vim.lsp.start {
       name = 'lua-language-server',
-      cmd = { 'lua-language-server' },
+      cmd = { lls_cmd },
       bufnr = bufnr,
-      capabilities = vim.lsp.protocol.make_client_capabilities(),
+      capabilities = lsp_capabilities(),
       settings = {
         Lua = {
           runtime = { version = 'LuaJIT' },
