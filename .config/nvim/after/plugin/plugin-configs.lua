@@ -201,19 +201,43 @@ vim.api.nvim_create_autocmd('VimEnter', {
       require('fidget').setup()
     end)
 
-    -- CodeCompanion Configuration (chat backed by Claude Code via ACP)
-    -- Requires: npm install -g @zed-industries/claude-agent-acp
+    -- CodeCompanion Configuration (using local Ollama with Qwen 2.5 Coder 14B)
     pcall(function()
       require('codecompanion').setup {
         interactions = {
-          chat = { adapter = 'claude_code' },
-          inline = { adapter = 'claude_code' },
+          chat = { adapter = 'ollama' },
+          inline = { adapter = 'ollama' },
+        },
+        adapters = {
+          http = {
+            ollama = function()
+              return require('codecompanion.adapters').extend('ollama', {
+                schema = {
+                  model = {
+                    default = 'qwen2.5-coder:14b',
+                  },
+                },
+              })
+            end,
+            ollama_r1 = function()
+              return require('codecompanion.adapters').extend('ollama', {
+                name = 'ollama_r1',
+                schema = {
+                  model = {
+                    default = 'deepseek-r1:32b',
+                  },
+                },
+              })
+            end,
+          },
         },
       }
       vim.keymap.set('n', '<leader>cc', '<cmd>CodeCompanionChat<cr>', { desc = '[C]ode[C]ompanion Chat' })
       vim.keymap.set('v', '<leader>cc', '<cmd>CodeCompanionChat<cr>', { desc = '[C]ode[C]ompanion Chat' })
       vim.keymap.set('n', '<leader>ca', '<cmd>CodeCompanionActions<cr>', { desc = '[C]ode[C]ompanion [A]ctions' })
       vim.keymap.set('v', '<leader>ca', '<cmd>CodeCompanionActions<cr>', { desc = '[C]ode[C]ompanion [A]ctions' })
+      vim.keymap.set('n', '<leader>ci', '<cmd>CodeCompanion<cr>', { desc = '[C]ode[C]ompanion [I]nline prompt' })
+      vim.keymap.set('v', '<leader>ci', '<cmd>CodeCompanion<cr>', { desc = '[C]ode[C]ompanion [I]nline prompt' })
     end)
   end,
   once = true,

@@ -185,6 +185,17 @@ fi
 # Cargo/Rust setup (cross-platform)
 [[ -d "$HOME/.cargo/bin" ]] && export PATH="$HOME/.cargo/bin:$PATH"
 
+# aider: use the Mac's remote LM Studio instead of local (Linux only)
+if [[ "$OS_TYPE" != "Darwin" ]]; then
+  aider-mac() {
+    aider --openai-api-base "http://10.0.0.246:1234/v1" \
+      --openai-api-key "not-needed" \
+      --model "openai/qwen3-coder-30b-a3b-instruct-mlx" \
+      --model "qwen3-vlto-1.7b-instruct-qx85x-hi-ml"
+      "$@"
+  }
+fi
+
 # Oh-my-posh prompt (optional, fallback if unavailable)
 if command -v oh-my-posh &> /dev/null; then
   eval "$(oh-my-posh init zsh --config 'https://raw.githubusercontent.com/JanDeDobbeleer/oh-my-posh/main/themes/nordtron.omp.json')"

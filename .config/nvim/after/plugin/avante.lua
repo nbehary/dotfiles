@@ -1,4 +1,4 @@
--- avante.nvim configuration (using LM Studio with Gemma 4 12B)
+-- avante.nvim configuration (LM Studio + Ollama)
 pcall(function()
   -- Load avante_lib
   require('avante_lib').load()
@@ -13,8 +13,28 @@ pcall(function()
         model = "gemma-4-12b-qat",
         api_key_name = "", -- LM Studio doesn't require auth
         timeout = 30000,
+        extra_request_body = {
+          temperature = 0.2,
+          max_tokens = 512,
+        },
+      },
+      openai_mac = {
+        endpoint = "http://10.0.0.246:1234/v1",
+        model = "qwen3-coder-30b-a3b-instruct-mlx",
+        api_key_name = "", -- LM Studio doesn't require auth
+        timeout = 60000, -- higher than local: LAN + bigger model
+        extra_request_body = {
+          temperature = 0.2,
+          max_tokens = 512,
+        },
+      },
+      ollama = {
+        endpoint = "http://127.0.0.1:11434/v1",
+        model = "codellama-13b-instruct:latest",
+        api_key_name = "", -- Ollama doesn't require auth
+        timeout = 60000,
         temperature = 0.2,
-        max_tokens = 512,
+        max_tokens = 2048,
       },
     },
     behaviour = {
@@ -97,6 +117,17 @@ pcall(function()
     },
   })
 end)
+
+-- Switch between local LM Studio and the Mac's remote LM Studio
+vim.keymap.set("n", "<leader>vM", function()
+  require("avante.api").switch_provider("openai_mac")
+end, { desc = "Avante: switch to Mac (remote) provider" })
+vim.keymap.set("n", "<leader>vL", function()
+  require("avante.api").switch_provider("openai")
+end, { desc = "Avante: switch to local LM Studio provider" })
+vim.keymap.set("n", "<leader>vo", function()
+  require("avante.api").switch_provider("ollama")
+end, { desc = "Avante: switch to local Ollama (codellama-13b-instruct)" })
 
 -- Setup dressing.nvim (Avante UI dependency)
 pcall(function()
